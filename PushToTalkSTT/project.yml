@@ -1,0 +1,23 @@
+name: PushToTalkSTT
+options:
+  bundleIdPrefix: com.user
+  deploymentTarget:
+    macOS: "14.0"
+targets:
+  PushToTalkSTT:
+    type: application
+    platform: macOS
+    sources:
+      - PushToTalkSTT
+    settings:
+      PRODUCT_BUNDLE_IDENTIFIER: com.user.PushToTalkSTT
+      CODE_SIGN_IDENTITY: "-"
+      CODE_SIGN_STYLE: Automatic
+      DEVELOPMENT_TEAM: ""
+      ENABLE_HARDENED_RUNTIME: YES
+      SWIFT_VERSION: "6.0"
+      MACOSX_DEPLOYMENT_TARGET: "14.0"
+    info:
+      path: PushToTalkSTT/Info.plist
+    entitlements:
+      path: PushToTalkSTT/PushToTalkSTT.entitlements
