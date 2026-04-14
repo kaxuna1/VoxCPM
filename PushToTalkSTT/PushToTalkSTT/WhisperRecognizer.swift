@@ -1,6 +1,6 @@
 import AVFoundation
 import Accelerate
-import WhisperKit
+import FluidAudio
 
 struct RecognitionResult {
     let text: String
@@ -52,7 +52,7 @@ class WhisperRecognizer {
 
     // MARK: - Private
 
-    private var whisperKit: WhisperKit?
+    private var asrManager: AsrManager?
     private let audioEngine = AVAudioEngine()
     private var audioBuffer: [Float] = []
     private let bufferLock = NSLock()
@@ -62,36 +62,15 @@ class WhisperRecognizer {
 
     func loadModel() async {
         modelState = .loading
-        Self.dbg("loadModel() called")
-
-        let modelName = "openai_whisper-large-v3_turbo"
-        let modelPath = (Bundle.main.resourcePath ?? Bundle.main.bundlePath) + "/" + modelName
-        Self.dbg("modelPath = \(modelPath)")
-        Self.dbg("exists = \(FileManager.default.fileExists(atPath: modelPath))")
-
-        guard FileManager.default.fileExists(atPath: modelPath) else {
-            Self.dbg("ERROR: model not found")
-            modelState = .error
-            return
-        }
+        Self.dbg("loadModel() — downloading Parakeet TDT v3 CoreML model...")
 
         do {
-            Self.dbg("Initializing WhisperKit with \(modelName)...")
-            let config = WhisperKitConfig(
-                model: modelName,
-                modelFolder: modelPath,
-                computeOptions: ModelComputeOptions(
-                    melCompute: .cpuAndNeuralEngine,
-                    audioEncoderCompute: .cpuAndNeuralEngine,
-                    textDecoderCompute: .cpuAndNeuralEngine,
-                    prefillCompute: .cpuAndNeuralEngine
-                ),
-                verbose: false,
-                logLevel: .error,
-                download: false
-            )
-            whisperKit = try await WhisperKit(config)
-            Self.dbg("Model loaded successfully!")
+            let models = try await AsrModels.downloadAndLoad()
+            Self.dbg("Models downloaded, initializing AsrManager...")
+            let manager = AsrManager(config: .default)
+            try await manager.loadModels(models)
+            asrManager = manager
+            Self.dbg("Parakeet TDT v3 loaded successfully!")
             modelState = .loaded
         } catch {
             Self.dbg("Model load FAILED: \(error)")
@@ -102,13 +81,12 @@ class WhisperRecognizer {
     // MARK: - Recording
 
     func startRecording(completion: ((Error?) -> Void)? = nil) {
-        Self.dbg("startRecording() called, whisperKit=\(whisperKit != nil)")
+        Self.dbg("startRecording(), asrManager=\(asrManager != nil)")
 
-        guard whisperKit != nil else {
+        guard asrManager != nil else {
             completion?(NSError(
-                domain: "PushToTalkSTT",
-                code: -1,
-                userInfo: [NSLocalizedDescriptionKey: "WhisperKit model not loaded."]
+                domain: "PushToTalkSTT", code: -1,
+                userInfo: [NSLocalizedDescriptionKey: "Parakeet model not loaded."]
             ))
             return
         }
@@ -118,7 +96,7 @@ class WhisperRecognizer {
 
         let inputNode = audioEngine.inputNode
         let hardwareFormat = inputNode.outputFormat(forBus: 0)
-        Self.dbg("Hardware format: \(hardwareFormat.sampleRate)Hz, \(hardwareFormat.channelCount)ch")
+        Self.dbg("Hardware: \(hardwareFormat.sampleRate)Hz, \(hardwareFormat.channelCount)ch")
 
         inputNode.installTap(onBus: 0, bufferSize: 4096, format: hardwareFormat) { [weak self] buffer, _ in
             guard let self = self else { return }
@@ -130,22 +108,22 @@ class WhisperRecognizer {
         do {
             try audioEngine.start()
             Self.dbg("Audio engine started")
-            completion?(nil)
 
-            // Start streaming partial transcriptions every 2 seconds
             DispatchQueue.main.async { [weak self] in
                 self?.streamingTimer = Timer.scheduledTimer(withTimeInterval: 2.0, repeats: true) { [weak self] _ in
                     self?.transcribePartial()
                 }
             }
+
+            completion?(nil)
         } catch {
-            Self.dbg("Audio engine start FAILED: \(error)")
+            Self.dbg("Audio engine FAILED: \(error)")
             completion?(error)
         }
     }
 
     func stopRecording(completion: @escaping (RecognitionResult?) -> Void) {
-        Self.dbg("stopRecording() called, isRunning=\(audioEngine.isRunning)")
+        Self.dbg("stopRecording(), isRunning=\(audioEngine.isRunning)")
 
         guard audioEngine.isRunning else {
             completion(nil)
@@ -171,65 +149,27 @@ class WhisperRecognizer {
         }
 
         let duration = samples.isEmpty ? 0 : Double(samples.count) / inputSampleRate
-        Self.dbg("Captured \(samples.count) samples (\(String(format: "%.1f", duration))s) at \(inputSampleRate)Hz")
+        Self.dbg("Captured \(samples.count) samples (\(String(format: "%.1f", duration))s)")
 
-        guard !samples.isEmpty, let whisperKit = whisperKit else {
-            Self.dbg("No samples or no whisperKit — returning nil")
+        guard !samples.isEmpty, let asr = asrManager else {
             DispatchQueue.main.async { completion(nil) }
             return
         }
 
+        let resampled = Self.resampleTo16k(samples, fromRate: inputSampleRate)
+        Self.dbg("Resampled to \(resampled.count) samples, starting Parakeet transcription...")
+
         Task {
             do {
-                // Resample to 16kHz mono
-                let targetRate = 16000.0
-                let resampledSamples: [Float]
-                if abs(inputSampleRate - targetRate) < 1.0 {
-                    resampledSamples = samples
-                } else {
-                    resampledSamples = Self.resample(samples, fromRate: inputSampleRate, toRate: targetRate)
-                    Self.dbg("Resampled \(samples.count) -> \(resampledSamples.count) samples (16kHz)")
-                }
-
-                Self.dbg("Starting transcription with \(resampledSamples.count) samples...")
-
-                let forcedLanguage = LanguageManager.lockedLanguage
-                Self.dbg("Language: \(forcedLanguage ?? "auto-detect")")
-
-                let options = DecodingOptions(
-                    verbose: false,
-                    task: .transcribe,
-                    language: forcedLanguage,
-                    detectLanguage: forcedLanguage == nil
-                )
-
-                let results = try await whisperKit.transcribe(
-                    audioArray: resampledSamples,
-                    decodeOptions: options
-                )
-
-                Self.dbg("Got \(results.count) results")
-                for (i, r) in results.enumerated() {
-                    Self.dbg("  result[\(i)].text = \"\(r.text)\"")
-                    Self.dbg("  result[\(i)].language = \"\(r.language)\"")
-                    Self.dbg("  result[\(i)].segments = \(r.segments.count)")
-                    for (j, seg) in r.segments.enumerated() {
-                        Self.dbg("    seg[\(j)].text = \"\(seg.text)\" noSpeechProb=\(seg.noSpeechProb)")
-                    }
-                }
-
-                let rawText = results.map { $0.text }.joined(separator: " ")
-                Self.dbg("Raw text: \"\(rawText)\"")
-
-                let text = Self.cleanTranscription(rawText)
-                Self.dbg("Clean text: \"\(text)\"")
+                let result = try await asr.transcribe(resampled, source: .microphone)
+                let text = result.text.trimmingCharacters(in: .whitespacesAndNewlines)
+                Self.dbg("Parakeet: \"\(text)\" (confidence=\(result.confidence), RTFx=\(result.rtfx))")
 
                 if text.isEmpty {
                     DispatchQueue.main.async { completion(nil) }
                 } else {
-                    let language = results.first?.language ?? "unknown"
-                    let result = RecognitionResult(text: text, language: language, duration: duration)
-                    DispatchQueue.main.async { completion(result) }
+                    let rec = RecognitionResult(text: text, language: "auto", duration: duration)
+                    DispatchQueue.main.async { completion(rec) }
                 }
             } catch {
                 Self.dbg("Transcription FAILED: \(error)")
@@ -238,103 +178,70 @@ class WhisperRecognizer {
         }
     }
 
-    // MARK: - Private Helpers
-
-    private static func resample(_ samples: [Float], fromRate: Double, toRate: Double) -> [Float] {
-        let ratio = toRate / fromRate
-        let outputLength = Int(Double(samples.count) * ratio)
-        var output = [Float](repeating: 0, count: outputLength)
-
-        for i in 0..<outputLength {
-            let srcIndex = Double(i) / ratio
-            let srcIndexFloor = Int(srcIndex)
-            let frac = Float(srcIndex - Double(srcIndexFloor))
-
-            let sample0 = samples[min(srcIndexFloor, samples.count - 1)]
-            let sample1 = samples[min(srcIndexFloor + 1, samples.count - 1)]
-            output[i] = sample0 + frac * (sample1 - sample0)
-        }
-
-        return output
-    }
-
-    private static func cleanTranscription(_ text: String) -> String {
-        var cleaned = text
-        cleaned = cleaned.replacingOccurrences(of: "<\\|[^|]*\\|>", with: "", options: .regularExpression)
-        cleaned = cleaned.replacingOccurrences(of: "\\[.*?\\]|\\(.*?\\)", with: "", options: .regularExpression)
-        cleaned = cleaned.replacingOccurrences(of: "\\s+", with: " ", options: .regularExpression)
-            .trimmingCharacters(in: .whitespacesAndNewlines)
-        return cleaned
-    }
-
-    private func appendAudio(buffer: AVAudioPCMBuffer) {
-        guard let channelData = buffer.floatChannelData?[0] else { return }
-        let frameLength = Int(buffer.frameLength)
-        let samples = Array(UnsafeBufferPointer(start: channelData, count: frameLength))
-        bufferLock.withLock {
-            audioBuffer.append(contentsOf: samples)
-        }
-    }
-
-    private func processAudioLevel(buffer: AVAudioPCMBuffer) {
-        guard let channelData = buffer.floatChannelData?[0] else { return }
-        let frameLength = UInt32(buffer.frameLength)
-        var rms: Float = 0
-        vDSP_rmsqv(channelData, 1, &rms, vDSP_Length(frameLength))
-        let level = min(max((rms - 0.01) * 15.0, 0.0), 1.0)
-        DispatchQueue.main.async { [weak self] in
-            self?.onAudioLevel?(level)
-        }
-    }
-
-    private func stopAudioSession() {
-        streamingTimer?.invalidate()
-        streamingTimer = nil
-        if audioEngine.isRunning {
-            audioEngine.stop()
-            audioEngine.inputNode.removeTap(onBus: 0)
-        }
-    }
+    // MARK: - Streaming
 
     private func transcribePartial() {
-        guard let whisperKit = whisperKit, audioEngine.isRunning else { return }
-
+        guard let asr = asrManager, audioEngine.isRunning else { return }
         let inputSampleRate = audioEngine.inputNode.outputFormat(forBus: 0).sampleRate
         let samples: [Float] = bufferLock.withLock { Array(audioBuffer) }
-
-        guard samples.count > Int(inputSampleRate) else { return } // Need at least 1 second
+        guard samples.count > Int(inputSampleRate) else { return }
 
         Task {
             do {
-                let targetRate = 16000.0
-                let resampled = abs(inputSampleRate - targetRate) < 1.0
-                    ? samples
-                    : Self.resample(samples, fromRate: inputSampleRate, toRate: targetRate)
-
-                let forcedLang = LanguageManager.lockedLanguage
-                let options = DecodingOptions(
-                    verbose: false,
-                    task: .transcribe,
-                    language: forcedLang,
-                    detectLanguage: forcedLang == nil
-                )
-
-                let results = try await whisperKit.transcribe(
-                    audioArray: resampled,
-                    decodeOptions: options
-                )
-
-                let rawText = results.map { $0.text }.joined(separator: " ")
-                let text = Self.cleanTranscription(rawText)
-
+                let resampled = Self.resampleTo16k(samples, fromRate: inputSampleRate)
+                let result = try await asr.transcribe(resampled, source: .microphone)
+                let text = result.text.trimmingCharacters(in: .whitespacesAndNewlines)
                 if !text.isEmpty {
                     DispatchQueue.main.async { [weak self] in
                         self?.onPartialResult?(text)
                     }
                 }
-            } catch {
-                // Partial transcription failure is non-critical, ignore
-            }
+            } catch { /* partial failure is non-critical */ }
         }
+    }
+
+    // MARK: - Helpers
+
+    private static func resampleTo16k(_ samples: [Float], fromRate: Double) -> [Float] {
+        let targetRate = 16000.0
+        guard abs(fromRate - targetRate) > 1.0 else { return samples }
+
+        let ratio = targetRate / fromRate
+        let outputLength = Int(Double(samples.count) * ratio)
+        var output = [Float](repeating: 0, count: outputLength)
+
+        for i in 0..<outputLength {
+            let srcIndex = Double(i) / ratio
+            let srcFloor = Int(srcIndex)
+            let frac = Float(srcIndex - Double(srcFloor))
+            let s0 = samples[min(srcFloor, samples.count - 1)]
+            let s1 = samples[min(srcFloor + 1, samples.count - 1)]
+            output[i] = s0 + frac * (s1 - s0)
+        }
+        return output
+    }
+
+    private func appendAudio(buffer: AVAudioPCMBuffer) {
+        guard let channelData = buffer.floatChannelData?[0] else { return }
+        let count = Int(buffer.frameLength)
+        let samples = Array(UnsafeBufferPointer(start: channelData, count: count))
+        bufferLock.withLock { audioBuffer.append(contentsOf: samples) }
+    }
+
+    private func processAudioLevel(buffer: AVAudioPCMBuffer) {
+        guard let channelData = buffer.floatChannelData?[0] else { return }
+        var rms: Float = 0
+        vDSP_rmsqv(channelData, 1, &rms, vDSP_Length(buffer.frameLength))
+        let level = min(max((rms - 0.01) * 15.0, 0.0), 1.0)
+        DispatchQueue.main.async { [weak self] in self?.onAudioLevel?(level) }
+    }
+
+    private func stopAudioSession() {
+        if audioEngine.isRunning {
+            audioEngine.stop()
+            audioEngine.inputNode.removeTap(onBus: 0)
+        }
+        streamingTimer?.invalidate()
+        streamingTimer = nil
     }
 }

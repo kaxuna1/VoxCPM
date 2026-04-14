@@ -5,12 +5,12 @@ let package = Package(
     name: "PushToTalkSTT",
     platforms: [.macOS(.v14)],
     dependencies: [
-        .package(url: "https://github.com/argmaxinc/WhisperKit.git", from: "0.9.0"),
+        .package(url: "https://github.com/FluidInference/FluidAudio.git", from: "0.1.0"),
     ],
     targets: [
         .executableTarget(
             name: "PushToTalkSTT",
-            dependencies: ["WhisperKit"],
+            dependencies: ["FluidAudio"],
             path: "PushToTalkSTT",
             exclude: ["Resources", "Info.plist", "PushToTalkSTT.entitlements"],
             linkerSettings: [
