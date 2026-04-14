@@ -2,6 +2,7 @@ import SwiftUI
 
 struct ContentView: View {
     @ObservedObject var viewModel: ViewModel
+    @ObservedObject var store: TranscriptionStore
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
@@ -29,11 +30,11 @@ struct ContentView: View {
                     .font(.headline)
             }
 
-            if let text = viewModel.lastTranscription, !text.isEmpty {
+            if let entry = store.lastTranscription {
                 Text("Last transcription:")
                     .font(.caption)
                     .foregroundColor(.secondary)
-                Text(text)
+                Text(entry.text)
                     .font(.body)
                     .lineLimit(4)
                     .textSelection(.enabled)

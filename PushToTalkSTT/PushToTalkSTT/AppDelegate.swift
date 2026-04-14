@@ -13,6 +13,8 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     private var wasRightOptionPressed = false
     private let whisperRecognizer = WhisperRecognizer()
     private let viewModel = ViewModel()
+    private let transcriptionStore = TranscriptionStore()
+    private var historyWindowController: HistoryWindowController?
     private var overlayController: OverlayWindowController?
 
     private enum DefaultsKey {
@@ -35,9 +37,11 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         popover = NSPopover()
         popover.contentSize = NSSize(width: 280, height: 260)
         popover.behavior = .transient
-        popover.contentViewController = NSHostingController(rootView: ContentView(viewModel: viewModel))
+        popover.contentViewController = NSHostingController(rootView: ContentView(viewModel: viewModel, store: transcriptionStore))
 
         overlayController = OverlayWindowController()
+
+        historyWindowController = HistoryWindowController(store: transcriptionStore)
 
         whisperRecognizer.onAudioLevel = { [weak self] level in
             self?.overlayController?.updateAudioLevel(CGFloat(level))
@@ -71,6 +75,8 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 
         if event.type == .rightMouseUp {
             let menu = NSMenu()
+            menu.addItem(NSMenuItem(title: "History", action: #selector(openHistory), keyEquivalent: "h"))
+            menu.addItem(NSMenuItem.separator())
             menu.addItem(NSMenuItem(title: "Quit", action: #selector(quitApp), keyEquivalent: "q"))
             statusItem.menu = menu
             statusItem.button?.performClick(nil)
@@ -82,6 +88,10 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 
     @objc private func quitApp() {
         NSApplication.shared.terminate(nil)
+    }
+
+    @objc private func openHistory() {
+        historyWindowController?.showWindow()
     }
 
     // MARK: - Right Option Global + Local Monitor
@@ -155,21 +165,26 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         viewModel.isRecording = false
         updateIcon()
 
-        // Switch overlay to transcribing animation (don't hide yet)
         overlayController?.showTranscribing()
 
-        whisperRecognizer.stopRecording { [weak self] text in
+        whisperRecognizer.stopRecording { [weak self] result in
             guard let self = self else { return }
 
-            // Hide overlay now that transcription is done
             self.overlayController?.hide()
 
-            if let text = text, !text.isEmpty {
-                self.viewModel.lastTranscription = text
+            if let result = result {
+                let entry = TranscriptionEntry(
+                    text: result.text,
+                    language: result.language,
+                    duration: result.duration
+                )
+                self.transcriptionStore.add(entry)
+                self.viewModel.lastTranscription = result.text
+
                 DispatchQueue.main.asyncAfter(deadline: .now() + 0.15) {
-                    TextInjector.inject(text)
+                    TextInjector.inject(result.text)
                 }
-                self.showNotification(title: "Typed & Copied", body: text)
+                self.showNotification(title: "Typed & Copied", body: result.text)
             } else {
                 self.showNotification(title: "No speech detected", body: "Try speaking a bit longer.")
             }
