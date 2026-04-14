@@ -12,7 +12,7 @@ struct MiniMaxClient {
     }
 
     var endpoint: String {
-        "https://api.minimax.chat/v1/chat/completions"
+        "https://api.minimax.io/v1/text/chatcompletion_v2"
     }
 
     struct ChatResponse: Decodable {
