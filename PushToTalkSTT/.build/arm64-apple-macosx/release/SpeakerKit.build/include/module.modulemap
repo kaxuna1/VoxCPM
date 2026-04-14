@@ -1,3 +1,0 @@
-module SpeakerKit {
-    header "/Users/kaxuna1/Code/VoxCPM/PushToTalkSTT/.build/arm64-apple-macosx/release/SpeakerKit.build/include/SpeakerKit-Swift.h"
-}

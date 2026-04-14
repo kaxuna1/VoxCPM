@@ -1,7 +1,10 @@
 # WhisperKit CoreML models (downloaded via scripts/download-model.sh)
 PushToTalkSTT/Resources/openai_whisper-small/
 PushToTalkSTT/Resources/openai_whisper-large-v3/
-
+build/
+build_out/
+.build/
+DerivedData/
 # Xcode
 build/
 build_out/
