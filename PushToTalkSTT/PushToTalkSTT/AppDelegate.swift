@@ -81,6 +81,9 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             let launchItem = NSMenuItem(title: "Launch at Login", action: #selector(toggleLaunchAtLogin), keyEquivalent: "")
             launchItem.state = SMAppService.mainApp.status == .enabled ? .on : .off
             menu.addItem(launchItem)
+            let soundItem = NSMenuItem(title: "Sound Feedback", action: #selector(toggleSoundFeedback), keyEquivalent: "")
+            soundItem.state = SoundManager.isEnabled ? .on : .off
+            menu.addItem(soundItem)
             menu.addItem(NSMenuItem.separator())
             menu.addItem(NSMenuItem(title: "Quit", action: #selector(quitApp), keyEquivalent: "q"))
             statusItem.menu = menu
@@ -109,6 +112,10 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         } catch {
             print("Launch at login toggle failed: \(error)")
         }
+    }
+
+    @objc private func toggleSoundFeedback() {
+        SoundManager.isEnabled.toggle()
     }
 
     // MARK: - Right Option Global + Local Monitor
@@ -164,6 +171,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         viewModel.isRecording = true
         updateIcon()
         overlayController?.showListening()
+        SoundManager.playStart()
 
         whisperRecognizer.startRecording { [weak self] error in
             if let error = error {
@@ -172,6 +180,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
                     self?.updateIcon()
                     self?.overlayController?.hide()
                     self?.showNotification(title: "Error", body: error.localizedDescription)
+                    SoundManager.playError()
                 }
             }
         }
@@ -183,6 +192,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         updateIcon()
 
         overlayController?.showTranscribing()
+        SoundManager.playStop()
 
         whisperRecognizer.stopRecording { [weak self] result in
             guard let self = self else { return }
@@ -204,18 +214,24 @@ class AppDelegate: NSObject, NSApplicationDelegate {
                 self.showNotification(title: "Typed & Copied", body: result.text)
             } else {
                 self.showNotification(title: "No speech detected", body: "Try speaking a bit longer.")
+                SoundManager.playError()
             }
         }
     }
 
     private func updateIcon() {
         guard let button = statusItem.button else { return }
+
+        if !viewModel.isRecording {
+            waveformRenderer.reset()
+        }
+
         let symbolName: String
         let tintColor: NSColor
 
         if viewModel.isRecording {
-            symbolName = "mic.fill"
-            tintColor = .systemRed
+            // Waveform icon is set by onAudioLevel callback
+            return
         } else if !viewModel.isModelReady {
             symbolName = "mic.badge.xmark"
             tintColor = .systemOrange
