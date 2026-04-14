@@ -62,15 +62,23 @@ class WhisperRecognizer {
 
     func loadModel() async {
         modelState = .loading
-        Self.dbg("loadModel() — downloading Parakeet TDT v3 CoreML model...")
+
+        // Use v2 (English-only) when language is English/auto to avoid
+        // Parakeet v3 misdetecting English as Russian.
+        // Use v3 (multilingual) only when a non-English language is explicitly locked.
+        let lockedLang = LanguageManager.lockedLanguage
+        let useV3 = lockedLang != nil && lockedLang != "en"
+        let version: AsrModelVersion = useV3 ? .v3 : .v2
+
+        Self.dbg("loadModel() — downloading Parakeet TDT \(useV3 ? "v3 (multilingual)" : "v2 (English)")...")
 
         do {
-            let models = try await AsrModels.downloadAndLoad()
+            let models = try await AsrModels.downloadAndLoad(version: version)
             Self.dbg("Models downloaded, initializing AsrManager...")
             let manager = AsrManager(config: .default)
             try await manager.loadModels(models)
             asrManager = manager
-            Self.dbg("Parakeet TDT v3 loaded successfully!")
+            Self.dbg("Parakeet TDT \(useV3 ? "v3" : "v2") loaded successfully!")
             modelState = .loaded
         } catch {
             Self.dbg("Model load FAILED: \(error)")
