@@ -16,6 +16,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     private let viewModel = ViewModel()
     private let transcriptionStore = TranscriptionStore()
     private var historyWindowController: HistoryWindowController?
+    private var settingsWindowController: SettingsWindowController?
     private var overlayController: OverlayWindowController?
     private let waveformRenderer = WaveformRenderer()
 
@@ -44,6 +45,8 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         overlayController = OverlayWindowController()
 
         historyWindowController = HistoryWindowController(store: transcriptionStore)
+
+        settingsWindowController = SettingsWindowController()
 
         whisperRecognizer.onAudioLevel = { [weak self] level in
             self?.overlayController?.updateAudioLevel(CGFloat(level))
@@ -91,6 +94,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             let soundItem = NSMenuItem(title: "Sound Feedback", action: #selector(toggleSoundFeedback), keyEquivalent: "")
             soundItem.state = SoundManager.isEnabled ? .on : .off
             menu.addItem(soundItem)
+            menu.addItem(NSMenuItem(title: "Settings...", action: #selector(openSettings), keyEquivalent: ","))
             menu.addItem(NSMenuItem.separator())
             menu.addItem(NSMenuItem(title: "Quit", action: #selector(quitApp), keyEquivalent: "q"))
             statusItem.menu = menu
@@ -107,6 +111,10 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 
     @objc private func openHistory() {
         historyWindowController?.showWindow()
+    }
+
+    @objc private func openSettings() {
+        settingsWindowController?.showWindow()
     }
 
     @objc private func toggleLaunchAtLogin() {
@@ -204,8 +212,6 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         whisperRecognizer.stopRecording { [weak self] result in
             guard let self = self else { return }
 
-            self.overlayController?.hide()
-
             if let result = result {
                 let entry = TranscriptionEntry(
                     text: result.text,
@@ -213,13 +219,30 @@ class AppDelegate: NSObject, NSApplicationDelegate {
                     duration: result.duration
                 )
                 self.transcriptionStore.add(entry)
-                self.viewModel.lastTranscription = result.text
 
-                DispatchQueue.main.asyncAfter(deadline: .now() + 0.15) {
-                    TextInjector.inject(result.text)
+                // Run AI post-processing if enabled
+                if PostProcessor.shared.mode != .off {
+                    Task {
+                        let processed = await PostProcessor.shared.process(result.text)
+                        await MainActor.run {
+                            self.viewModel.lastTranscription = processed
+                            DispatchQueue.main.asyncAfter(deadline: .now() + 0.15) {
+                                TextInjector.inject(processed)
+                            }
+                            self.showNotification(title: "Typed & Copied", body: processed)
+                            self.overlayController?.hide()
+                        }
+                    }
+                } else {
+                    self.viewModel.lastTranscription = result.text
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.15) {
+                        TextInjector.inject(result.text)
+                    }
+                    self.showNotification(title: "Typed & Copied", body: result.text)
+                    self.overlayController?.hide()
                 }
-                self.showNotification(title: "Typed & Copied", body: result.text)
             } else {
+                self.overlayController?.hide()
                 self.showNotification(title: "No speech detected", body: "Try speaking a bit longer.")
                 SoundManager.playError()
             }
