@@ -17,6 +17,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     private let transcriptionStore = TranscriptionStore()
     private var historyWindowController: HistoryWindowController?
     private var overlayController: OverlayWindowController?
+    private let waveformRenderer = WaveformRenderer()
 
     private enum DefaultsKey {
         static let hasRequestedMic = "PushToTalkSTT.hasRequestedMic"
@@ -46,6 +47,12 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 
         whisperRecognizer.onAudioLevel = { [weak self] level in
             self?.overlayController?.updateAudioLevel(CGFloat(level))
+            if self?.viewModel.isRecording == true {
+                self?.waveformRenderer.addLevel(CGFloat(level))
+                if let icon = self?.waveformRenderer.renderIcon() {
+                    self?.statusItem.button?.image = icon
+                }
+            }
         }
 
         whisperRecognizer.onModelStateChanged = { [weak self] state in
