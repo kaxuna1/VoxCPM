@@ -1,6 +1,7 @@
 import SwiftUI
 import AppKit
 
+@MainActor
 class AudioLevelModel: ObservableObject {
     @Published var audioLevel: CGFloat = 0.0
 }
@@ -42,7 +43,7 @@ class OverlayWindowController: NSWindowController {
 
     func show() {
         centerWindow()
-        window?.makeKeyAndOrderFront(nil)
+        window?.orderFront(nil)
     }
 
     func hide() {

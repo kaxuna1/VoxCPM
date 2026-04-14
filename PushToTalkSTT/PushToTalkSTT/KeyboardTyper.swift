@@ -9,6 +9,11 @@ struct KeyboardTyper {
             let keyDown = CGEvent(keyboardEventSource: source, virtualKey: 0, keyDown: true)
             let keyUp = CGEvent(keyboardEventSource: source, virtualKey: 0, keyDown: false)
 
+            // Clear modifier flags to prevent accented characters if Option key
+            // hasn't fully released from the push-to-talk trigger
+            keyDown?.flags = []
+            keyUp?.flags = []
+
             let chars = String(character)
             let length = chars.utf16.count
 

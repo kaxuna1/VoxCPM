@@ -40,37 +40,7 @@ class SpeechRecognizer: NSObject {
         stopAudioSession()
         latestResult = nil
 
-        recognitionRequest = SFSpeechAudioBufferRecognitionRequest()
-        guard let recognitionRequest = recognitionRequest else {
-            completion?(NSError(
-                domain: "PushToTalkSTT",
-                code: -2,
-                userInfo: [NSLocalizedDescriptionKey: "Unable to create recognition request."]
-            ))
-            return
-        }
-
-        recognitionRequest.shouldReportPartialResults = true
-        recognitionRequest.requiresOnDeviceRecognition = true
-
-        recognitionTask = speechRecognizer.recognitionTask(with: recognitionRequest) { [weak self] result, error in
-            guard let self = self else { return }
-            if let result = result {
-                self.latestResult = result.bestTranscription.formattedString
-                if result.isFinal {
-                    self.deliverStopCompletion()
-                }
-            }
-            if let error = error {
-                let nsError = error as NSError
-                // Code 216 = no speech detected, not a real error
-                if nsError.domain == "kAFAssistantErrorDomain" && nsError.code == 216 {
-                    self.deliverStopCompletion()
-                    return
-                }
-                self.deliverStopCompletion()
-            }
-        }
+        setupRecognitionTask(speechRecognizer: speechRecognizer)
 
         let inputNode = audioEngine.inputNode
         let recordingFormat = inputNode.outputFormat(forBus: 0)
@@ -110,6 +80,58 @@ class SpeechRecognizer: NSObject {
         DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) { [weak self] in
             self?.deliverStopCompletion()
         }
+    }
+
+    // MARK: - Private
+
+    /// Creates a new recognition request and task, reusing the shared callback handler.
+    /// Called both at initial start and when restarting after the recognizer finishes on its own.
+    private func setupRecognitionTask(speechRecognizer: SFSpeechRecognizer) {
+        recognitionTask?.cancel()
+        recognitionTask = nil
+        recognitionRequest = nil
+
+        let request = SFSpeechAudioBufferRecognitionRequest()
+        request.shouldReportPartialResults = true
+        request.requiresOnDeviceRecognition = true
+        recognitionRequest = request
+
+        recognitionTask = speechRecognizer.recognitionTask(with: request) { [weak self] result, error in
+            guard let self = self else { return }
+            if let result = result {
+                self.latestResult = result.bestTranscription.formattedString
+                if result.isFinal {
+                    if self.stopCompletion != nil {
+                        self.deliverStopCompletion()
+                    } else {
+                        // Recognizer finished on its own during active recording;
+                        // restart to keep capturing speech
+                        self.restartRecognitionTask()
+                    }
+                }
+            }
+            if let error = error {
+                let nsError = error as NSError
+                // Code 216 = no speech detected, not a real error
+                if nsError.domain == "kAFAssistantErrorDomain" && nsError.code == 216 {
+                    if self.stopCompletion != nil {
+                        self.deliverStopCompletion()
+                    } else {
+                        self.restartRecognitionTask()
+                    }
+                    return
+                }
+                self.deliverStopCompletion()
+            }
+        }
+    }
+
+    /// Restart the recognition task while audio engine keeps running.
+    /// Called when the recognizer delivers isFinal or error 216 during active recording.
+    private func restartRecognitionTask() {
+        guard let speechRecognizer = speechRecognizer, speechRecognizer.isAvailable,
+              audioEngine.isRunning else { return }
+        setupRecognitionTask(speechRecognizer: speechRecognizer)
     }
 
     private func deliverStopCompletion() {

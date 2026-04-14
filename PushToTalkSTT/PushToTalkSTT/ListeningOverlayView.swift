@@ -45,7 +45,6 @@ struct ListeningOverlayView: View {
                 .animation(.linear(duration: 4).repeatForever(autoreverses: false), value: rotate)
         }
         .frame(width: 400, height: 400)
-        .background(VisualEffectBlurView(material: .hudWindow, blendingMode: .behindWindow).opacity(0.0))
         .onAppear {
             pulse.toggle()
             rotate.toggle()
@@ -70,23 +69,5 @@ struct OrbRing: View {
                 .delay(delay),
                 value: pulse
             )
-    }
-}
-
-struct VisualEffectBlurView: NSViewRepresentable {
-    var material: NSVisualEffectView.Material
-    var blendingMode: NSVisualEffectView.BlendingMode
-
-    func makeNSView(context: Context) -> NSVisualEffectView {
-        let view = NSVisualEffectView()
-        view.material = material
-        view.blendingMode = blendingMode
-        view.state = .active
-        return view
-    }
-
-    func updateNSView(_ nsView: NSVisualEffectView, context: Context) {
-        nsView.material = material
-        nsView.blendingMode = blendingMode
     }
 }
