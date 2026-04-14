@@ -193,10 +193,14 @@ class WhisperRecognizer {
 
                 Self.dbg("Starting transcription with \(resampledSamples.count) samples...")
 
+                let forcedLanguage = LanguageManager.lockedLanguage
+                Self.dbg("Language: \(forcedLanguage ?? "auto-detect")")
+
                 let options = DecodingOptions(
                     verbose: false,
                     task: .transcribe,
-                    detectLanguage: true
+                    language: forcedLanguage,
+                    detectLanguage: forcedLanguage == nil
                 )
 
                 let results = try await whisperKit.transcribe(
@@ -307,10 +311,12 @@ class WhisperRecognizer {
                     ? samples
                     : Self.resample(samples, fromRate: inputSampleRate, toRate: targetRate)
 
+                let forcedLang = LanguageManager.lockedLanguage
                 let options = DecodingOptions(
                     verbose: false,
                     task: .transcribe,
-                    detectLanguage: true
+                    language: forcedLang,
+                    detectLanguage: forcedLang == nil
                 )
 
                 let results = try await whisperKit.transcribe(

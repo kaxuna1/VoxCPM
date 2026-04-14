@@ -110,6 +110,20 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             let modeItem = NSMenuItem(title: "Mode: \(DictationMode.current.rawValue)", action: nil, keyEquivalent: "")
             modeItem.submenu = modeMenu
             menu.addItem(modeItem)
+
+            // Language submenu
+            let langMenu = NSMenu()
+            for lang in LanguageManager.supportedLanguages {
+                let item = NSMenuItem(title: lang.name, action: #selector(switchLanguage(_:)), keyEquivalent: "")
+                item.representedObject = lang.code
+                let currentCode = UserDefaults.standard.string(forKey: "languageLock") ?? "auto"
+                item.state = lang.code == currentCode ? .on : .off
+                langMenu.addItem(item)
+            }
+            let langItem = NSMenuItem(title: "Language: \(LanguageManager.currentShortLabel)", action: nil, keyEquivalent: "")
+            langItem.submenu = langMenu
+            menu.addItem(langItem)
+
             menu.addItem(NSMenuItem(title: "Settings...", action: #selector(openSettings), keyEquivalent: ","))
             menu.addItem(NSMenuItem.separator())
             menu.addItem(NSMenuItem(title: "Quit", action: #selector(quitApp), keyEquivalent: "q"))
@@ -132,6 +146,11 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     @objc private func openStatistics() {
         historyWindowController?.showWindow()
         // The history window has a Statistics tab - user can switch to it
+    }
+
+    @objc private func switchLanguage(_ sender: NSMenuItem) {
+        guard let code = sender.representedObject as? String else { return }
+        LanguageManager.lockedLanguage = code == "auto" ? nil : code
     }
 
     @objc private func openSettings() {

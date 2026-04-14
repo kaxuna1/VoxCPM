@@ -8,6 +8,7 @@ struct SettingsView: View {
     @State private var ollamaStatus: String = "Checking..."
     @State private var isOllamaAvailable = false
     @State private var soundEnabled = SoundManager.isEnabled
+    @State private var selectedLanguage: String = UserDefaults.standard.string(forKey: "languageLock") ?? "auto"
 
     var body: some View {
         TabView {
@@ -113,6 +114,27 @@ struct SettingsView: View {
                     .onChange(of: soundEnabled) { _, newValue in
                         SoundManager.isEnabled = newValue
                     }
+            }
+
+            Section("Language") {
+                Picker("Transcription Language", selection: $selectedLanguage) {
+                    ForEach(LanguageManager.supportedLanguages, id: \.code) { lang in
+                        Text(lang.name).tag(lang.code)
+                    }
+                }
+                .onChange(of: selectedLanguage) { _, newValue in
+                    LanguageManager.lockedLanguage = newValue == "auto" ? nil : newValue
+                }
+
+                if selectedLanguage != "auto" {
+                    Text("Language is locked to \(LanguageManager.currentDisplayName). Auto-detection is disabled.")
+                        .font(.caption)
+                        .foregroundColor(.secondary)
+                } else {
+                    Text("Language is auto-detected. For better accuracy with Georgian or other low-resource languages, lock to a specific language.")
+                        .font(.caption)
+                        .foregroundColor(.secondary)
+                }
             }
 
             Section("About") {
