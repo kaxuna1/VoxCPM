@@ -136,7 +136,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 
         viewModel.isRecording = true
         updateIcon()
-        overlayController?.show()
+        overlayController?.showListening()
 
         whisperRecognizer.startRecording { [weak self] error in
             if let error = error {
@@ -154,13 +154,18 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         guard viewModel.isRecording else { return }
         viewModel.isRecording = false
         updateIcon()
-        overlayController?.hide()
+
+        // Switch overlay to transcribing animation (don't hide yet)
+        overlayController?.showTranscribing()
 
         whisperRecognizer.stopRecording { [weak self] text in
             guard let self = self else { return }
+
+            // Hide overlay now that transcription is done
+            self.overlayController?.hide()
+
             if let text = text, !text.isEmpty {
                 self.viewModel.lastTranscription = text
-                // TextInjector handles clipboard save/set/paste/restore internally
                 DispatchQueue.main.asyncAfter(deadline: .now() + 0.15) {
                     TextInjector.inject(text)
                 }

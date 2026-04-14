@@ -1,17 +1,23 @@
 import SwiftUI
 import AppKit
 
+enum OverlayPhase {
+    case listening
+    case transcribing
+}
+
 @MainActor
-class AudioLevelModel: ObservableObject {
+class OverlayModel: ObservableObject {
     @Published var audioLevel: CGFloat = 0.0
+    @Published var phase: OverlayPhase = .listening
 }
 
 class OverlayWindowController: NSWindowController {
-    let audioLevelModel = AudioLevelModel()
+    let overlayModel = OverlayModel()
 
     convenience init() {
         let window = NSWindow(
-            contentRect: NSRect(x: 0, y: 0, width: 400, height: 400),
+            contentRect: NSRect(x: 0, y: 0, width: 500, height: 500),
             styleMask: [.borderless, .fullSizeContentView],
             backing: .buffered,
             defer: false
@@ -22,9 +28,10 @@ class OverlayWindowController: NSWindowController {
         window.collectionBehavior = [.canJoinAllSpaces, .stationary]
         window.hasShadow = false
         window.isReleasedWhenClosed = false
+        window.ignoresMouseEvents = true
 
         self.init(window: window)
-        window.contentView = NSHostingView(rootView: ListeningOverlayView(model: audioLevelModel))
+        window.contentView = NSHostingView(rootView: OverlayRootView(model: overlayModel))
         centerWindow()
     }
 
@@ -38,12 +45,19 @@ class OverlayWindowController: NSWindowController {
     }
 
     func updateAudioLevel(_ level: CGFloat) {
-        audioLevelModel.audioLevel = level
+        overlayModel.audioLevel = level
     }
 
-    func show() {
+    func showListening() {
+        overlayModel.phase = .listening
+        overlayModel.audioLevel = 0
         centerWindow()
         window?.orderFront(nil)
+    }
+
+    func showTranscribing() {
+        overlayModel.phase = .transcribing
+        overlayModel.audioLevel = 0
     }
 
     func hide() {
