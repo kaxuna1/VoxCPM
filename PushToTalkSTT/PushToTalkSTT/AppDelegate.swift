@@ -3,6 +3,7 @@ import AppKit
 import UserNotifications
 import ApplicationServices
 import AVFoundation
+import ServiceManagement
 
 @MainActor
 class AppDelegate: NSObject, NSApplicationDelegate {
@@ -77,6 +78,10 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             let menu = NSMenu()
             menu.addItem(NSMenuItem(title: "History", action: #selector(openHistory), keyEquivalent: "h"))
             menu.addItem(NSMenuItem.separator())
+            let launchItem = NSMenuItem(title: "Launch at Login", action: #selector(toggleLaunchAtLogin), keyEquivalent: "")
+            launchItem.state = SMAppService.mainApp.status == .enabled ? .on : .off
+            menu.addItem(launchItem)
+            menu.addItem(NSMenuItem.separator())
             menu.addItem(NSMenuItem(title: "Quit", action: #selector(quitApp), keyEquivalent: "q"))
             statusItem.menu = menu
             statusItem.button?.performClick(nil)
@@ -92,6 +97,18 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 
     @objc private func openHistory() {
         historyWindowController?.showWindow()
+    }
+
+    @objc private func toggleLaunchAtLogin() {
+        do {
+            if SMAppService.mainApp.status == .enabled {
+                try SMAppService.mainApp.unregister()
+            } else {
+                try SMAppService.mainApp.register()
+            }
+        } catch {
+            print("Launch at login toggle failed: \(error)")
+        }
     }
 
     // MARK: - Right Option Global + Local Monitor
