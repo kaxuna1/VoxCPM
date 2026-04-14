@@ -10,6 +10,7 @@ enum OverlayPhase {
 class OverlayModel: ObservableObject {
     @Published var audioLevel: CGFloat = 0.0
     @Published var phase: OverlayPhase = .listening
+    @Published var partialText: String = ""
 }
 
 class OverlayWindowController: NSWindowController {
@@ -48,9 +49,14 @@ class OverlayWindowController: NSWindowController {
         overlayModel.audioLevel = level
     }
 
+    func updatePartialText(_ text: String) {
+        overlayModel.partialText = text
+    }
+
     func showListening() {
         overlayModel.phase = .listening
         overlayModel.audioLevel = 0
+        overlayModel.partialText = ""
         centerWindow()
         window?.orderFront(nil)
     }

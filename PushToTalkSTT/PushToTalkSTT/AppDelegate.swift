@@ -58,6 +58,10 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             }
         }
 
+        whisperRecognizer.onPartialResult = { [weak self] text in
+            self?.overlayController?.updatePartialText(text)
+        }
+
         whisperRecognizer.onModelStateChanged = { [weak self] state in
             guard let self = self else { return }
             self.viewModel.modelStatus = state.rawValue

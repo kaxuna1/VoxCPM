@@ -6,18 +6,36 @@ struct OverlayRootView: View {
     @ObservedObject var model: OverlayModel
 
     var body: some View {
-        ZStack {
-            switch model.phase {
-            case .listening:
-                ListeningView(model: model)
-                    .transition(.opacity.combined(with: .scale(scale: 1.2)))
-            case .transcribing:
-                TranscribingView()
-                    .transition(.opacity.combined(with: .scale(scale: 0.8)))
+        VStack(spacing: 0) {
+            ZStack {
+                switch model.phase {
+                case .listening:
+                    ListeningView(model: model)
+                        .transition(.opacity.combined(with: .scale(scale: 1.2)))
+                case .transcribing:
+                    TranscribingView()
+                        .transition(.opacity.combined(with: .scale(scale: 0.8)))
+                }
             }
+            .frame(width: 500, height: 400)
+            .animation(.easeInOut(duration: 0.5), value: model.phase == .transcribing)
+
+            // Partial transcription preview
+            if !model.partialText.isEmpty && model.phase == .listening {
+                Text(model.partialText)
+                    .font(.system(size: 14, weight: .medium, design: .rounded))
+                    .foregroundColor(.white.opacity(0.85))
+                    .multilineTextAlignment(.center)
+                    .lineLimit(2)
+                    .padding(.horizontal, 40)
+                    .shadow(color: .black.opacity(0.5), radius: 4)
+                    .transition(.opacity.combined(with: .move(edge: .bottom)))
+                    .animation(.easeInOut(duration: 0.3), value: model.partialText)
+            }
+
+            Spacer(minLength: 0)
         }
         .frame(width: 500, height: 500)
-        .animation(.easeInOut(duration: 0.5), value: model.phase == .transcribing)
     }
 }
 

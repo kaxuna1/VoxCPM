@@ -38,6 +38,7 @@ class WhisperRecognizer {
     // MARK: - Public
 
     var onAudioLevel: ((Float) -> Void)?
+    var onPartialResult: ((String) -> Void)?
     var onModelStateChanged: ((WhisperModelState) -> Void)?
 
     private(set) var modelState: WhisperModelState = .unloaded {
@@ -55,6 +56,7 @@ class WhisperRecognizer {
     private let audioEngine = AVAudioEngine()
     private var audioBuffer: [Float] = []
     private let bufferLock = NSLock()
+    private var streamingTimer: Timer?
 
     // MARK: - Model Loading
 
@@ -129,6 +131,13 @@ class WhisperRecognizer {
             try audioEngine.start()
             Self.dbg("Audio engine started")
             completion?(nil)
+
+            // Start streaming partial transcriptions every 2 seconds
+            DispatchQueue.main.async { [weak self] in
+                self?.streamingTimer = Timer.scheduledTimer(withTimeInterval: 2.0, repeats: true) { [weak self] _ in
+                    self?.transcribePartial()
+                }
+            }
         } catch {
             Self.dbg("Audio engine start FAILED: \(error)")
             completion?(error)
@@ -142,6 +151,9 @@ class WhisperRecognizer {
             completion(nil)
             return
         }
+
+        streamingTimer?.invalidate()
+        streamingTimer = nil
 
         let inputSampleRate = audioEngine.inputNode.outputFormat(forBus: 0).sampleRate
 
@@ -272,9 +284,51 @@ class WhisperRecognizer {
     }
 
     private func stopAudioSession() {
+        streamingTimer?.invalidate()
+        streamingTimer = nil
         if audioEngine.isRunning {
             audioEngine.stop()
             audioEngine.inputNode.removeTap(onBus: 0)
+        }
+    }
+
+    private func transcribePartial() {
+        guard let whisperKit = whisperKit, audioEngine.isRunning else { return }
+
+        let inputSampleRate = audioEngine.inputNode.outputFormat(forBus: 0).sampleRate
+        let samples: [Float] = bufferLock.withLock { Array(audioBuffer) }
+
+        guard samples.count > Int(inputSampleRate) else { return } // Need at least 1 second
+
+        Task {
+            do {
+                let targetRate = 16000.0
+                let resampled = abs(inputSampleRate - targetRate) < 1.0
+                    ? samples
+                    : Self.resample(samples, fromRate: inputSampleRate, toRate: targetRate)
+
+                let options = DecodingOptions(
+                    verbose: false,
+                    task: .transcribe,
+                    detectLanguage: true
+                )
+
+                let results = try await whisperKit.transcribe(
+                    audioArray: resampled,
+                    decodeOptions: options
+                )
+
+                let rawText = results.map { $0.text }.joined(separator: " ")
+                let text = Self.cleanTranscription(rawText)
+
+                if !text.isEmpty {
+                    DispatchQueue.main.async { [weak self] in
+                        self?.onPartialResult?(text)
+                    }
+                }
+            } catch {
+                // Partial transcription failure is non-critical, ignore
+            }
         }
     }
 }
