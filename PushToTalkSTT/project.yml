@@ -3,12 +3,21 @@ options:
   bundleIdPrefix: com.user
   deploymentTarget:
     macOS: "14.0"
+packages:
+  WhisperKit:
+    url: https://github.com/argmaxinc/WhisperKit.git
+    from: "0.9.0"
 targets:
   PushToTalkSTT:
     type: application
     platform: macOS
     sources:
       - PushToTalkSTT
+    resources:
+      - path: PushToTalkSTT/Resources
+        buildPhase: resources
+    dependencies:
+      - package: WhisperKit
     settings:
       PRODUCT_BUNDLE_IDENTIFIER: com.user.PushToTalkSTT
       CODE_SIGN_IDENTITY: "-"
