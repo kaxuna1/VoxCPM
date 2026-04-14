@@ -1,0 +1,13 @@
+# WhisperKit CoreML model (~460MB, downloaded via scripts/download-model.sh)
+PushToTalkSTT/Resources/openai_whisper-small/
+
+# Xcode
+build/
+build_out/
+DerivedData/
+*.xcuserstate
+*.xcuserdatad
+xcuserdata/
+
+# macOS
+.DS_Store
