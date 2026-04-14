@@ -15,10 +15,13 @@ struct OverlayRootView: View {
                 case .transcribing:
                     TranscribingView()
                         .transition(.opacity.combined(with: .scale(scale: 0.8)))
+                case .processing:
+                    ProcessingView()
+                        .transition(.opacity.combined(with: .scale(scale: 0.9)))
                 }
             }
             .frame(width: 500, height: 400)
-            .animation(.easeInOut(duration: 0.5), value: model.phase == .transcribing)
+            .animation(.easeInOut(duration: 0.4), value: model.phase)
 
             // Partial transcription preview
             if !model.partialText.isEmpty && model.phase == .listening {
@@ -356,6 +359,90 @@ struct TranscribingView: View {
             withAnimation(.easeInOut(duration: 2.0).repeatForever(autoreverses: true)) {
                 glow = true
             }
+        }
+    }
+}
+
+// MARK: ─────────────────────────────────────────────────
+// MARK:  Phase 3: PROCESSING — AI enhancement spinner
+// MARK: ─────────────────────────────────────────────────
+
+struct ProcessingView: View {
+    @State private var spin = false
+    @State private var pulse = false
+    @State private var glow = false
+
+    private let teal1 = Color(hue: 0.48, saturation: 0.8, brightness: 0.95)
+    private let teal2 = Color(hue: 0.52, saturation: 0.7, brightness: 1.0)
+    private let cyan = Color(hue: 0.5, saturation: 0.6, brightness: 1.0)
+
+    var body: some View {
+        ZStack {
+            // Background glow
+            Circle()
+                .fill(
+                    RadialGradient(
+                        colors: [teal1.opacity(0.15), teal2.opacity(0.05), .clear],
+                        center: .center, startRadius: 30, endRadius: 180
+                    )
+                )
+                .frame(width: 360, height: 360)
+                .blur(radius: 25)
+                .scaleEffect(glow ? 1.1 : 0.9)
+
+            // Outer rotating ring
+            ArcShape(startAngle: .degrees(0), endAngle: .degrees(140))
+                .stroke(
+                    AngularGradient(colors: [.clear, teal1.opacity(0.5), cyan.opacity(0.7), .clear], center: .center),
+                    style: StrokeStyle(lineWidth: 4, lineCap: .round)
+                )
+                .frame(width: 160, height: 160)
+                .rotationEffect(.degrees(spin ? 360 : 0))
+                .animation(.linear(duration: 1.5).repeatForever(autoreverses: false), value: spin)
+
+            // Inner counter-rotating ring
+            ArcShape(startAngle: .degrees(0), endAngle: .degrees(100))
+                .stroke(
+                    AngularGradient(colors: [.clear, .white.opacity(0.7), teal2, .clear], center: .center),
+                    style: StrokeStyle(lineWidth: 5, lineCap: .round)
+                )
+                .frame(width: 110, height: 110)
+                .rotationEffect(.degrees(spin ? -360 : 0))
+                .animation(.linear(duration: 1.0).repeatForever(autoreverses: false), value: spin)
+
+            // Fast inner arc
+            ArcShape(startAngle: .degrees(0), endAngle: .degrees(50))
+                .stroke(
+                    AngularGradient(colors: [.clear, .white.opacity(0.9), teal1, .clear], center: .center),
+                    style: StrokeStyle(lineWidth: 3, lineCap: .round)
+                )
+                .frame(width: 70, height: 70)
+                .rotationEffect(.degrees(spin ? 360 : 0))
+                .animation(.linear(duration: 0.7).repeatForever(autoreverses: false), value: spin)
+
+            // Center brain icon
+            Image(systemName: "brain")
+                .font(.system(size: 28))
+                .foregroundStyle(
+                    LinearGradient(colors: [teal1, cyan], startPoint: .topLeading, endPoint: .bottomTrailing)
+                )
+                .shadow(color: teal1.opacity(0.6), radius: 8)
+                .scaleEffect(pulse ? 1.1 : 0.9)
+
+            // Label
+            Text("Enhancing...")
+                .font(.system(size: 13, weight: .medium, design: .rounded))
+                .foregroundStyle(
+                    LinearGradient(colors: [teal1, .white, teal2], startPoint: .leading, endPoint: .trailing)
+                )
+                .shadow(color: teal1.opacity(0.4), radius: 4)
+                .offset(y: 120)
+                .opacity(pulse ? 1.0 : 0.6)
+        }
+        .onAppear {
+            withAnimation(.linear(duration: 1.5).repeatForever(autoreverses: false)) { spin = true }
+            withAnimation(.easeInOut(duration: 0.7).repeatForever(autoreverses: true)) { pulse = true }
+            withAnimation(.easeInOut(duration: 1.8).repeatForever(autoreverses: true)) { glow = true }
         }
     }
 }

@@ -1,0 +1,3 @@
+module CryptoExtras {
+    header "/Users/kaxuna1/Code/VoxCPM/PushToTalkSTT/.build/arm64-apple-macosx/release/CryptoExtras.build/include/CryptoExtras-Swift.h"
+}

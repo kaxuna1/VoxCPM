@@ -18,7 +18,5 @@
 	<string>1.0</string>
 	<key>CFBundleVersion</key>
 	<string>1</string>
-	<key>NSMicrophoneUsageDescription</key>
-	<string>PushToTalkSTT needs microphone access to capture your voice for speech recognition.</string>
 </dict>
 </plist>

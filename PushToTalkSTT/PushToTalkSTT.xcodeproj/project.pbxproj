@@ -7,15 +7,29 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		0642E3FA8F60A6219B7AE03D /* config.json.lock in Resources */ = {isa = PBXBuildFile; fileRef = CE6CBE7FE9C434946BF0ADAE /* config.json.lock */; };
+		1BBBBC8A751D6CEC68095DC1 /* WhisperKit in Frameworks */ = {isa = PBXBuildFile; productRef = F759942145757EFC2230DFC6 /* WhisperKit */; };
+		337A6C8943B7ACCF65B1C3FD /* MelSpectrogram.mlmodelc in Resources */ = {isa = PBXBuildFile; fileRef = F757C7CD7BB5C99F31C1E1A3 /* MelSpectrogram.mlmodelc */; };
+		4CCD1358D2EEC03B9D5BC7BB /* TextDecoder.mlmodelc in Resources */ = {isa = PBXBuildFile; fileRef = 9FDD13DCF350C0230BA373B0 /* TextDecoder.mlmodelc */; };
 		523A0537714F5B101653B521 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 51883E35965243CACF721D43 /* AppDelegate.swift */; };
 		570F5B3604A8F0EB49B3248F /* OverlayWindowController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 28FFA377BCCBDC7AB3B168A5 /* OverlayWindowController.swift */; };
 		5B85E5BD10A0E63D86D5BCC2 /* ClipboardManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = C01082E27C6F1C44E5E157CA /* ClipboardManager.swift */; };
+		5C3E5E7D0CC52892D44EA33D /* TextInjector.swift in Sources */ = {isa = PBXBuildFile; fileRef = C27D3FF7C6154CC65DEFA66D /* TextInjector.swift */; };
+		6214B971CA01BDB9510F1434 /* generation_config.json.metadata in Resources */ = {isa = PBXBuildFile; fileRef = E320F0E928939BD863A0A240 /* generation_config.json.metadata */; };
+		7960B52F73A28B70BC78738A /* AudioEncoder.mlmodelc in Resources */ = {isa = PBXBuildFile; fileRef = 5094C59834F4EAF33585BF76 /* AudioEncoder.mlmodelc */; };
 		79E7DF775E5CB3CFD62046B2 /* ViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5E54F5E4D3E0CD2E79C6212C /* ViewModel.swift */; };
+		86210F57D4E0C2E243A4CAB6 /* config.json.metadata in Resources */ = {isa = PBXBuildFile; fileRef = 6181BD43052BAB1A7B5E45EB /* config.json.metadata */; };
 		905E853C64C0F16A78F1B5E2 /* PushToTalkSTTApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 09FA39FDCC015DBAD8406344 /* PushToTalkSTTApp.swift */; };
+		9F4ED1D7C3836319E9171AFA /* WhisperRecognizer.swift in Sources */ = {isa = PBXBuildFile; fileRef = C6C8B10A3EF69269188FEE4B /* WhisperRecognizer.swift */; };
+		AB30A47F68B1A0C036E8A9AB /* generation_config.json in Resources */ = {isa = PBXBuildFile; fileRef = B8F7C9B94B2462CB5C5D0877 /* generation_config.json */; };
 		B1387E467147CEF4EB5264C2 /* KeyboardTyper.swift in Sources */ = {isa = PBXBuildFile; fileRef = A71C1099E35B93C5D6E41711 /* KeyboardTyper.swift */; };
-		C7D9602258F84297DF9E822A /* SpeechRecognizer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 84C0304B0AD8FD93DF3FC296 /* SpeechRecognizer.swift */; };
+		C61630EDF811AE348A1D4A47 /* TextDecoder.mlmodelc in Resources */ = {isa = PBXBuildFile; fileRef = FE5DD5A2DA0CE11DCF45E996 /* TextDecoder.mlmodelc */; };
+		C7F92CD5676062CC3ADFAF2A /* MelSpectrogram.mlmodelc in Resources */ = {isa = PBXBuildFile; fileRef = 9974DB41D09ABDA1AE7E6259 /* MelSpectrogram.mlmodelc */; };
+		D6668EB668017E77BE3A6B81 /* AudioEncoder.mlmodelc in Resources */ = {isa = PBXBuildFile; fileRef = DE5CE8C05F1F188F70DEC53F /* AudioEncoder.mlmodelc */; };
 		D8FCBDA31726EC9FCB2CE377 /* ListeningOverlayView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 307E187C6D66D7402B91F6D8 /* ListeningOverlayView.swift */; };
+		DFC01597A3E788F842B24B3A /* config.json in Resources */ = {isa = PBXBuildFile; fileRef = 23ACB3735E3D60CC9ABAA7B5 /* config.json */; };
 		E5A7E1A093F9419BE38EAB5C /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3369796AF896ADF5C72FB186 /* ContentView.swift */; };
+		F895053BAD3C842E5B4C485A /* generation_config.json.lock in Resources */ = {isa = PBXBuildFile; fileRef = C666B94531FAE4FB461684CC /* generation_config.json.lock */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -23,23 +37,100 @@
 		09FA39FDCC015DBAD8406344 /* PushToTalkSTTApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PushToTalkSTTApp.swift; sourceTree = "<group>"; };
 		107AADCC05D647221F05699F /* PushToTalkSTT.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = PushToTalkSTT.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		1DB9309305303946E3D818D5 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
+		23ACB3735E3D60CC9ABAA7B5 /* config.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = config.json; sourceTree = "<group>"; };
 		28FFA377BCCBDC7AB3B168A5 /* OverlayWindowController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OverlayWindowController.swift; sourceTree = "<group>"; };
 		307E187C6D66D7402B91F6D8 /* ListeningOverlayView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ListeningOverlayView.swift; sourceTree = "<group>"; };
 		3369796AF896ADF5C72FB186 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
+		5094C59834F4EAF33585BF76 /* AudioEncoder.mlmodelc */ = {isa = PBXFileReference; path = AudioEncoder.mlmodelc; sourceTree = "<group>"; };
 		51883E35965243CACF721D43 /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
 		5E54F5E4D3E0CD2E79C6212C /* ViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ViewModel.swift; sourceTree = "<group>"; };
-		84C0304B0AD8FD93DF3FC296 /* SpeechRecognizer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpeechRecognizer.swift; sourceTree = "<group>"; };
+		6181BD43052BAB1A7B5E45EB /* config.json.metadata */ = {isa = PBXFileReference; path = config.json.metadata; sourceTree = "<group>"; };
+		72BF38CB6BD8CE5E3B6C3772 /* .gitignore */ = {isa = PBXFileReference; path = .gitignore; sourceTree = "<group>"; };
+		9974DB41D09ABDA1AE7E6259 /* MelSpectrogram.mlmodelc */ = {isa = PBXFileReference; path = MelSpectrogram.mlmodelc; sourceTree = "<group>"; };
+		9FDD13DCF350C0230BA373B0 /* TextDecoder.mlmodelc */ = {isa = PBXFileReference; path = TextDecoder.mlmodelc; sourceTree = "<group>"; };
 		A71C1099E35B93C5D6E41711 /* KeyboardTyper.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KeyboardTyper.swift; sourceTree = "<group>"; };
+		B8F7C9B94B2462CB5C5D0877 /* generation_config.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = generation_config.json; sourceTree = "<group>"; };
 		C01082E27C6F1C44E5E157CA /* ClipboardManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClipboardManager.swift; sourceTree = "<group>"; };
+		C27D3FF7C6154CC65DEFA66D /* TextInjector.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TextInjector.swift; sourceTree = "<group>"; };
+		C666B94531FAE4FB461684CC /* generation_config.json.lock */ = {isa = PBXFileReference; path = generation_config.json.lock; sourceTree = "<group>"; };
+		C6C8B10A3EF69269188FEE4B /* WhisperRecognizer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WhisperRecognizer.swift; sourceTree = "<group>"; };
+		CE6CBE7FE9C434946BF0ADAE /* config.json.lock */ = {isa = PBXFileReference; path = config.json.lock; sourceTree = "<group>"; };
+		DE5CE8C05F1F188F70DEC53F /* AudioEncoder.mlmodelc */ = {isa = PBXFileReference; path = AudioEncoder.mlmodelc; sourceTree = "<group>"; };
+		E320F0E928939BD863A0A240 /* generation_config.json.metadata */ = {isa = PBXFileReference; path = generation_config.json.metadata; sourceTree = "<group>"; };
+		F757C7CD7BB5C99F31C1E1A3 /* MelSpectrogram.mlmodelc */ = {isa = PBXFileReference; path = MelSpectrogram.mlmodelc; sourceTree = "<group>"; };
+		FE5DD5A2DA0CE11DCF45E996 /* TextDecoder.mlmodelc */ = {isa = PBXFileReference; path = TextDecoder.mlmodelc; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
+/* Begin PBXFrameworksBuildPhase section */
+		303B4F216A8B1F166473957F /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				1BBBBC8A751D6CEC68095DC1 /* WhisperKit in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
 /* Begin PBXGroup section */
+		499807FAE147C360997A3B8C /* huggingface */ = {
+			isa = PBXGroup;
+			children = (
+				72BF38CB6BD8CE5E3B6C3772 /* .gitignore */,
+				4AA9627C5E40F8EC1A466326 /* download */,
+			);
+			path = huggingface;
+			sourceTree = "<group>";
+		};
+		4AA9627C5E40F8EC1A466326 /* download */ = {
+			isa = PBXGroup;
+			children = (
+				AE89B8D379B25B0074298155 /* openai_whisper-small */,
+			);
+			path = download;
+			sourceTree = "<group>";
+		};
 		56E94E1858A12292F8057B8C = {
 			isa = PBXGroup;
 			children = (
 				D94427FB875EB4A27A3A8903 /* PushToTalkSTT */,
 				E893FCDC87C2AB1BB2C85C64 /* Products */,
 			);
+			sourceTree = "<group>";
+		};
+		5A96EEA1B5F49D30355C3B42 /* openai_whisper-small */ = {
+			isa = PBXGroup;
+			children = (
+				DE5CE8C05F1F188F70DEC53F /* AudioEncoder.mlmodelc */,
+				23ACB3735E3D60CC9ABAA7B5 /* config.json */,
+				B8F7C9B94B2462CB5C5D0877 /* generation_config.json */,
+				9974DB41D09ABDA1AE7E6259 /* MelSpectrogram.mlmodelc */,
+				9FDD13DCF350C0230BA373B0 /* TextDecoder.mlmodelc */,
+			);
+			path = "openai_whisper-small";
+			sourceTree = "<group>";
+		};
+		6BA7CE6CB3804949DBEF3740 /* Resources */ = {
+			isa = PBXGroup;
+			children = (
+				F7DDD1CFD5B9EE66DA6238BE /* .cache */,
+				5A96EEA1B5F49D30355C3B42 /* openai_whisper-small */,
+			);
+			path = Resources;
+			sourceTree = "<group>";
+		};
+		AE89B8D379B25B0074298155 /* openai_whisper-small */ = {
+			isa = PBXGroup;
+			children = (
+				5094C59834F4EAF33585BF76 /* AudioEncoder.mlmodelc */,
+				CE6CBE7FE9C434946BF0ADAE /* config.json.lock */,
+				6181BD43052BAB1A7B5E45EB /* config.json.metadata */,
+				C666B94531FAE4FB461684CC /* generation_config.json.lock */,
+				E320F0E928939BD863A0A240 /* generation_config.json.metadata */,
+				F757C7CD7BB5C99F31C1E1A3 /* MelSpectrogram.mlmodelc */,
+				FE5DD5A2DA0CE11DCF45E996 /* TextDecoder.mlmodelc */,
+			);
+			path = "openai_whisper-small";
 			sourceTree = "<group>";
 		};
 		D94427FB875EB4A27A3A8903 /* PushToTalkSTT */ = {
@@ -54,8 +145,10 @@
 				28FFA377BCCBDC7AB3B168A5 /* OverlayWindowController.swift */,
 				01AFF78465F5702182A8E997 /* PushToTalkSTT.entitlements */,
 				09FA39FDCC015DBAD8406344 /* PushToTalkSTTApp.swift */,
-				84C0304B0AD8FD93DF3FC296 /* SpeechRecognizer.swift */,
+				C27D3FF7C6154CC65DEFA66D /* TextInjector.swift */,
 				5E54F5E4D3E0CD2E79C6212C /* ViewModel.swift */,
+				C6C8B10A3EF69269188FEE4B /* WhisperRecognizer.swift */,
+				6BA7CE6CB3804949DBEF3740 /* Resources */,
 			);
 			path = PushToTalkSTT;
 			sourceTree = "<group>";
@@ -68,6 +161,14 @@
 			name = Products;
 			sourceTree = "<group>";
 		};
+		F7DDD1CFD5B9EE66DA6238BE /* .cache */ = {
+			isa = PBXGroup;
+			children = (
+				499807FAE147C360997A3B8C /* huggingface */,
+			);
+			path = .cache;
+			sourceTree = "<group>";
+		};
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
@@ -76,6 +177,8 @@
 			buildConfigurationList = C67EF64D9C61427C6151CDB6 /* Build configuration list for PBXNativeTarget "PushToTalkSTT" */;
 			buildPhases = (
 				07D781D5070EEC68B364A039 /* Sources */,
+				364F3E61B9C18F63A01ADABE /* Resources */,
+				303B4F216A8B1F166473957F /* Frameworks */,
 			);
 			buildRules = (
 			);
@@ -83,6 +186,7 @@
 			);
 			name = PushToTalkSTT;
 			packageProductDependencies = (
+				F759942145757EFC2230DFC6 /* WhisperKit */,
 			);
 			productName = PushToTalkSTT;
 			productReference = 107AADCC05D647221F05699F /* PushToTalkSTT.app */;
@@ -112,6 +216,9 @@
 			);
 			mainGroup = 56E94E1858A12292F8057B8C;
 			minimizedProjectReferenceProxies = 1;
+			packageReferences = (
+				99D8F5636DE3CF548BE0368C /* XCRemoteSwiftPackageReference "WhisperKit" */,
+			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = E893FCDC87C2AB1BB2C85C64 /* Products */;
 			projectDirPath = "";
@@ -121,6 +228,28 @@
 			);
 		};
 /* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		364F3E61B9C18F63A01ADABE /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				D6668EB668017E77BE3A6B81 /* AudioEncoder.mlmodelc in Resources */,
+				7960B52F73A28B70BC78738A /* AudioEncoder.mlmodelc in Resources */,
+				C7F92CD5676062CC3ADFAF2A /* MelSpectrogram.mlmodelc in Resources */,
+				337A6C8943B7ACCF65B1C3FD /* MelSpectrogram.mlmodelc in Resources */,
+				4CCD1358D2EEC03B9D5BC7BB /* TextDecoder.mlmodelc in Resources */,
+				C61630EDF811AE348A1D4A47 /* TextDecoder.mlmodelc in Resources */,
+				DFC01597A3E788F842B24B3A /* config.json in Resources */,
+				0642E3FA8F60A6219B7AE03D /* config.json.lock in Resources */,
+				86210F57D4E0C2E243A4CAB6 /* config.json.metadata in Resources */,
+				AB30A47F68B1A0C036E8A9AB /* generation_config.json in Resources */,
+				F895053BAD3C842E5B4C485A /* generation_config.json.lock in Resources */,
+				6214B971CA01BDB9510F1434 /* generation_config.json.metadata in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
 		07D781D5070EEC68B364A039 /* Sources */ = {
@@ -134,8 +263,9 @@
 				D8FCBDA31726EC9FCB2CE377 /* ListeningOverlayView.swift in Sources */,
 				570F5B3604A8F0EB49B3248F /* OverlayWindowController.swift in Sources */,
 				905E853C64C0F16A78F1B5E2 /* PushToTalkSTTApp.swift in Sources */,
-				C7D9602258F84297DF9E822A /* SpeechRecognizer.swift in Sources */,
+				5C3E5E7D0CC52892D44EA33D /* TextInjector.swift in Sources */,
 				79E7DF775E5CB3CFD62046B2 /* ViewModel.swift in Sources */,
+				9F4ED1D7C3836319E9171AFA /* WhisperRecognizer.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -327,6 +457,25 @@
 			defaultConfigurationName = Debug;
 		};
 /* End XCConfigurationList section */
+
+/* Begin XCRemoteSwiftPackageReference section */
+		99D8F5636DE3CF548BE0368C /* XCRemoteSwiftPackageReference "WhisperKit" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/argmaxinc/WhisperKit.git";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 0.9.0;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		F759942145757EFC2230DFC6 /* WhisperKit */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 99D8F5636DE3CF548BE0368C /* XCRemoteSwiftPackageReference "WhisperKit" */;
+			productName = WhisperKit;
+		};
+/* End XCSwiftPackageProductDependency section */
 	};
 	rootObject = 43504956AC0E2F3E46B1651B /* Project object */;
 }

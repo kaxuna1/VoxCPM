@@ -1,0 +1,3 @@
+module TTSKit {
+    header "/Users/kaxuna1/Code/VoxCPM/PushToTalkSTT/.build/arm64-apple-macosx/release/TTSKit.build/include/TTSKit-Swift.h"
+}

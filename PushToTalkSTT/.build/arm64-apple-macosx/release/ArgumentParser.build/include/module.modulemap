@@ -1,0 +1,3 @@
+module ArgumentParser {
+    header "/Users/kaxuna1/Code/VoxCPM/PushToTalkSTT/.build/arm64-apple-macosx/release/ArgumentParser.build/include/ArgumentParser-Swift.h"
+}

@@ -1,0 +1,3 @@
+module Hub {
+    header "/Users/kaxuna1/Code/VoxCPM/PushToTalkSTT/.build/arm64-apple-macosx/release/Hub.build/include/Hub-Swift.h"
+}

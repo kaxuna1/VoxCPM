@@ -1,0 +1,25 @@
+{
+  "": {
+    "dependencies": "/Users/kaxuna1/Code/VoxCPM/PushToTalkSTT/.build/arm64-apple-macosx/release/TrailingElementsModule.build/TrailingElementsModule.d",
+    "object": "/Users/kaxuna1/Code/VoxCPM/PushToTalkSTT/.build/arm64-apple-macosx/release/TrailingElementsModule.build/TrailingElementsModule.o",
+    "swift-dependencies": "/Users/kaxuna1/Code/VoxCPM/PushToTalkSTT/.build/arm64-apple-macosx/release/TrailingElementsModule.build/primary.swiftdeps"
+  },
+  "/Users/kaxuna1/Code/VoxCPM/PushToTalkSTT/.build/checkouts/swift-collections/Sources/TrailingElementsModule/TrailingArray.swift": {
+    "object": "/Users/kaxuna1/Code/VoxCPM/PushToTalkSTT/.build/arm64-apple-macosx/release/TrailingElementsModule.build/TrailingArray.swift.o",
+    "swiftmodule": "/Users/kaxuna1/Code/VoxCPM/PushToTalkSTT/.build/arm64-apple-macosx/release/TrailingElementsModule.build/TrailingArray~partial.swiftmodule",
+    "swift-dependencies": "/Users/kaxuna1/Code/VoxCPM/PushToTalkSTT/.build/arm64-apple-macosx/release/TrailingElementsModule.build/TrailingArray.swiftdeps",
+    "diagnostics": "/Users/kaxuna1/Code/VoxCPM/PushToTalkSTT/.build/arm64-apple-macosx/release/TrailingElementsModule.build/TrailingArray.dia"
+  },
+  "/Users/kaxuna1/Code/VoxCPM/PushToTalkSTT/.build/checkouts/swift-collections/Sources/TrailingElementsModule/TrailingElements.swift": {
+    "object": "/Users/kaxuna1/Code/VoxCPM/PushToTalkSTT/.build/arm64-apple-macosx/release/TrailingElementsModule.build/TrailingElements.swift.o",
+    "swiftmodule": "/Users/kaxuna1/Code/VoxCPM/PushToTalkSTT/.build/arm64-apple-macosx/release/TrailingElementsModule.build/TrailingElements~partial.swiftmodule",
+    "swift-dependencies": "/Users/kaxuna1/Code/VoxCPM/PushToTalkSTT/.build/arm64-apple-macosx/release/TrailingElementsModule.build/TrailingElements.swiftdeps",
+    "diagnostics": "/Users/kaxuna1/Code/VoxCPM/PushToTalkSTT/.build/arm64-apple-macosx/release/TrailingElementsModule.build/TrailingElements.dia"
+  },
+  "/Users/kaxuna1/Code/VoxCPM/PushToTalkSTT/.build/checkouts/swift-collections/Sources/TrailingElementsModule/TrailingPadding.swift": {
+    "object": "/Users/kaxuna1/Code/VoxCPM/PushToTalkSTT/.build/arm64-apple-macosx/release/TrailingElementsModule.build/TrailingPadding.swift.o",
+    "swiftmodule": "/Users/kaxuna1/Code/VoxCPM/PushToTalkSTT/.build/arm64-apple-macosx/release/TrailingElementsModule.build/TrailingPadding~partial.swiftmodule",
+    "swift-dependencies": "/Users/kaxuna1/Code/VoxCPM/PushToTalkSTT/.build/arm64-apple-macosx/release/TrailingElementsModule.build/TrailingPadding.swiftdeps",
+    "diagnostics": "/Users/kaxuna1/Code/VoxCPM/PushToTalkSTT/.build/arm64-apple-macosx/release/TrailingElementsModule.build/TrailingPadding.dia"
+  }
+}

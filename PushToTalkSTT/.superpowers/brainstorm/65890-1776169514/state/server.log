@@ -1,0 +1,4 @@
+{"type":"server-started","port":54350,"host":"127.0.0.1","url_host":"localhost","url":"http://localhost:54350","screen_dir":"/Users/kaxuna1/Code/VoxCPM/PushToTalkSTT/.superpowers/brainstorm/65890-1776169514/content","state_dir":"/Users/kaxuna1/Code/VoxCPM/PushToTalkSTT/.superpowers/brainstorm/65890-1776169514/state"}
+{"type":"screen-added","file":"/Users/kaxuna1/Code/VoxCPM/PushToTalkSTT/.superpowers/brainstorm/65890-1776169514/content/history-layout.html"}
+{"type":"screen-added","file":"/Users/kaxuna1/Code/VoxCPM/PushToTalkSTT/.superpowers/brainstorm/65890-1776169514/content/waiting.html"}
+{"type":"server-stopped","reason":"idle timeout"}

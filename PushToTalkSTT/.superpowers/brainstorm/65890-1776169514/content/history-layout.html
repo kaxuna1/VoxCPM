@@ -1,0 +1,92 @@
+<h2>History Window Layout</h2>
+<p class="subtitle">Which layout feels right for browsing transcription history?</p>
+
+<div class="cards">
+  <div class="card" data-choice="a" onclick="toggleSelect(this)">
+    <div class="card-image">
+      <div style="background:#1a1a2e;border-radius:8px;padding:16px;font-family:system-ui;color:#e0e0e0;font-size:12px;">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;">
+          <div style="background:#2a2a4a;border-radius:6px;padding:6px 12px;flex:1;">
+            <span style="color:#888;">&#128269; Search transcriptions...</span>
+          </div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:6px;">
+          <div style="background:#2a2a4a;border-radius:6px;padding:10px;">
+            <div style="display:flex;justify-content:space-between;margin-bottom:4px;">
+              <span style="color:#aaa;font-size:10px;">Today, 3:42 PM</span>
+              <span style="background:#333;color:#888;font-size:9px;padding:2px 6px;border-radius:3px;">EN</span>
+            </div>
+            <div style="color:#fff;font-size:11px;">Hello, can you hear me? This is a test of the transcription.</div>
+          </div>
+          <div style="background:#2a2a4a;border-radius:6px;padding:10px;">
+            <div style="display:flex;justify-content:space-between;margin-bottom:4px;">
+              <span style="color:#aaa;font-size:10px;">Today, 3:38 PM</span>
+              <span style="background:#333;color:#888;font-size:9px;padding:2px 6px;border-radius:3px;">EN</span>
+            </div>
+            <div style="color:#fff;font-size:11px;">What can I do?</div>
+          </div>
+          <div style="background:#2a2a4a;border-radius:6px;padding:10px;">
+            <div style="display:flex;justify-content:space-between;margin-bottom:4px;">
+              <span style="color:#aaa;font-size:10px;">Yesterday, 11:20 AM</span>
+              <span style="background:#333;color:#888;font-size:9px;padding:2px 6px;border-radius:3px;">KA</span>
+            </div>
+            <div style="color:#fff;font-size:11px;">&#4315;&#4317;&#4321;&#4304;&#4314;&#4317;&#4307;&#4316;&#4308;&#4314;&#4312; &#4322;&#4308;&#4325;&#4321;&#4322;&#4312;...</div>
+          </div>
+          <div style="background:#2a2a4a;border-radius:6px;padding:10px;opacity:0.5;">
+            <div style="color:#aaa;font-size:10px;">Apr 12, 9:15 AM</div>
+            <div style="color:#fff;font-size:11px;">Remind me to buy groceries...</div>
+          </div>
+        </div>
+        <div style="text-align:center;color:#555;font-size:10px;margin-top:8px;">42 transcriptions</div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>A: Simple List</h3>
+      <p>Single scrollable list. Search bar at top. Each entry shows timestamp, language, full text. Click to copy. Compact, fast to scan.</p>
+    </div>
+  </div>
+
+  <div class="card" data-choice="b" onclick="toggleSelect(this)">
+    <div class="card-image">
+      <div style="background:#1a1a2e;border-radius:8px;padding:16px;font-family:system-ui;color:#e0e0e0;font-size:12px;">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;">
+          <div style="background:#2a2a4a;border-radius:6px;padding:6px 12px;flex:1;">
+            <span style="color:#888;">&#128269; Search...</span>
+          </div>
+        </div>
+        <div style="display:flex;gap:8px;">
+          <div style="flex:0 0 40%;display:flex;flex-direction:column;gap:4px;">
+            <div style="background:#3a3a6a;border-radius:4px;padding:8px;border-left:3px solid #7c6bff;">
+              <div style="color:#aaa;font-size:9px;">Today, 3:42 PM</div>
+              <div style="color:#fff;font-size:10px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">Hello, can you hear me?...</div>
+            </div>
+            <div style="background:#2a2a4a;border-radius:4px;padding:8px;">
+              <div style="color:#aaa;font-size:9px;">Today, 3:38 PM</div>
+              <div style="color:#fff;font-size:10px;">What can I do?</div>
+            </div>
+            <div style="background:#2a2a4a;border-radius:4px;padding:8px;">
+              <div style="color:#aaa;font-size:9px;">Yesterday</div>
+              <div style="color:#fff;font-size:10px;">&#4315;&#4317;&#4321;&#4304;&#4314;&#4317;&#4307;...</div>
+            </div>
+            <div style="background:#2a2a4a;border-radius:4px;padding:8px;opacity:0.5;">
+              <div style="color:#aaa;font-size:9px;">Apr 12</div>
+              <div style="color:#fff;font-size:10px;">Remind me to...</div>
+            </div>
+          </div>
+          <div style="flex:1;background:#2a2a4a;border-radius:6px;padding:10px;">
+            <div style="color:#aaa;font-size:9px;margin-bottom:6px;">Today, 3:42 PM &middot; EN &middot; 2.4s</div>
+            <div style="color:#fff;font-size:11px;line-height:1.5;">Hello, can you hear me? This is a test of the transcription system.</div>
+            <div style="display:flex;gap:6px;margin-top:10px;">
+              <div style="background:#3a3a6a;color:#aaa;font-size:9px;padding:4px 8px;border-radius:4px;">&#128203; Copy</div>
+              <div style="background:#3a3a6a;color:#aaa;font-size:9px;padding:4px 8px;border-radius:4px;">&#128465; Delete</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>B: Master-Detail</h3>
+      <p>List on left, detail pane on right. Full text, metadata, actions (copy, delete) for selected item. Better for longer transcriptions.</p>
+    </div>
+  </div>
+</div>

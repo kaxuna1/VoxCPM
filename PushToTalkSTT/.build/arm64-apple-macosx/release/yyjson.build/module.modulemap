@@ -1,0 +1,4 @@
+module yyjson {
+    umbrella header "/Users/kaxuna1/Code/VoxCPM/PushToTalkSTT/.build/checkouts/yyjson/src/yyjson.h"
+    export *
+}

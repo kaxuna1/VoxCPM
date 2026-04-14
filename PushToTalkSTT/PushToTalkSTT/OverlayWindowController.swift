@@ -1,9 +1,10 @@
 import SwiftUI
 import AppKit
 
-enum OverlayPhase {
+enum OverlayPhase: Equatable {
     case listening
     case transcribing
+    case processing  // AI post-processing in progress
 }
 
 @MainActor
@@ -64,6 +65,10 @@ class OverlayWindowController: NSWindowController {
     func showTranscribing() {
         overlayModel.phase = .transcribing
         overlayModel.audioLevel = 0
+    }
+
+    func showProcessing() {
+        overlayModel.phase = .processing
     }
 
     func hide() {

@@ -263,6 +263,9 @@ class AppDelegate: NSObject, NSApplicationDelegate {
                 // In Code mode, always run code post-processing
                 let shouldProcess = DictationMode.current == .code || PostProcessor.shared.mode != .off
                 if shouldProcess {
+                    // Show AI processing animation
+                    self.overlayController?.showProcessing()
+
                     Task {
                         let useMode: ProcessingMode = DictationMode.current == .code ? .code : PostProcessor.shared.mode
                         let saved = PostProcessor.shared.mode
@@ -270,12 +273,12 @@ class AppDelegate: NSObject, NSApplicationDelegate {
                         let processed = await PostProcessor.shared.process(result.text)
                         PostProcessor.shared.mode = saved
                         await MainActor.run {
+                            self.overlayController?.hide()
                             self.viewModel.lastTranscription = processed
                             DispatchQueue.main.asyncAfter(deadline: .now() + 0.15) {
                                 TextInjector.inject(processed)
                             }
                             self.showNotification(title: "Typed & Copied", body: processed)
-                            self.overlayController?.hide()
                         }
                     }
                 } else {
