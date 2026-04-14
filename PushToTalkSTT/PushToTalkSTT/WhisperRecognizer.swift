@@ -11,6 +11,24 @@ enum WhisperModelState: String {
 
 class WhisperRecognizer {
 
+    // MARK: - Debug
+
+    private static func dbg(_ msg: String) {
+        let logFile = "/tmp/ptt_debug.log"
+        let line = "\(Date()): \(msg)\n"
+        if let data = line.data(using: .utf8) {
+            if FileManager.default.fileExists(atPath: logFile) {
+                if let handle = FileHandle(forWritingAtPath: logFile) {
+                    handle.seekToEndOfFile()
+                    handle.write(data)
+                    handle.closeFile()
+                }
+            } else {
+                FileManager.default.createFile(atPath: logFile, contents: data)
+            }
+        }
+    }
+
     // MARK: - Public
 
     var onAudioLevel: ((Float) -> Void)?
@@ -36,17 +54,23 @@ class WhisperRecognizer {
 
     func loadModel() async {
         modelState = .loading
+        Self.dbg("loadModel() called")
 
-        guard let modelPath = Bundle.main.resourcePath.map({ $0 + "/openai_whisper-small" }),
-              FileManager.default.fileExists(atPath: modelPath) else {
-            print("WhisperRecognizer: model not found in bundle")
+        let modelName = "openai_whisper-large-v3"
+        let modelPath = (Bundle.main.resourcePath ?? Bundle.main.bundlePath) + "/" + modelName
+        Self.dbg("modelPath = \(modelPath)")
+        Self.dbg("exists = \(FileManager.default.fileExists(atPath: modelPath))")
+
+        guard FileManager.default.fileExists(atPath: modelPath) else {
+            Self.dbg("ERROR: model not found")
             modelState = .error
             return
         }
 
         do {
+            Self.dbg("Initializing WhisperKit with \(modelName)...")
             let config = WhisperKitConfig(
-                model: "openai_whisper-small",
+                model: modelName,
                 modelFolder: modelPath,
                 computeOptions: ModelComputeOptions(
                     melCompute: .cpuAndNeuralEngine,
@@ -59,10 +83,10 @@ class WhisperRecognizer {
                 download: false
             )
             whisperKit = try await WhisperKit(config)
-            print("WhisperRecognizer: model loaded successfully")
+            Self.dbg("Model loaded successfully!")
             modelState = .loaded
         } catch {
-            print("WhisperRecognizer: model load failed – \(error)")
+            Self.dbg("Model load FAILED: \(error)")
             modelState = .error
         }
     }
@@ -70,6 +94,8 @@ class WhisperRecognizer {
     // MARK: - Recording
 
     func startRecording(completion: ((Error?) -> Void)? = nil) {
+        Self.dbg("startRecording() called, whisperKit=\(whisperKit != nil)")
+
         guard whisperKit != nil else {
             completion?(NSError(
                 domain: "PushToTalkSTT",
@@ -84,6 +110,7 @@ class WhisperRecognizer {
 
         let inputNode = audioEngine.inputNode
         let hardwareFormat = inputNode.outputFormat(forBus: 0)
+        Self.dbg("Hardware format: \(hardwareFormat.sampleRate)Hz, \(hardwareFormat.channelCount)ch")
 
         inputNode.installTap(onBus: 0, bufferSize: 4096, format: hardwareFormat) { [weak self] buffer, _ in
             guard let self = self else { return }
@@ -94,14 +121,17 @@ class WhisperRecognizer {
         audioEngine.prepare()
         do {
             try audioEngine.start()
-            print("WhisperRecognizer: recording at \(hardwareFormat.sampleRate)Hz, \(hardwareFormat.channelCount)ch")
+            Self.dbg("Audio engine started")
             completion?(nil)
         } catch {
+            Self.dbg("Audio engine start FAILED: \(error)")
             completion?(error)
         }
     }
 
     func stopRecording(completion: @escaping (String?) -> Void) {
+        Self.dbg("stopRecording() called, isRunning=\(audioEngine.isRunning)")
+
         guard audioEngine.isRunning else {
             completion(nil)
             return
@@ -122,26 +152,28 @@ class WhisperRecognizer {
             return copy
         }
 
+        let duration = samples.isEmpty ? 0 : Double(samples.count) / inputSampleRate
+        Self.dbg("Captured \(samples.count) samples (\(String(format: "%.1f", duration))s) at \(inputSampleRate)Hz")
+
         guard !samples.isEmpty, let whisperKit = whisperKit else {
+            Self.dbg("No samples or no whisperKit — returning nil")
             DispatchQueue.main.async { completion(nil) }
             return
         }
 
-        let duration = Double(samples.count) / inputSampleRate
-        print("WhisperRecognizer: captured \(samples.count) samples (\(String(format: "%.1f", duration))s) at \(inputSampleRate)Hz")
-
         Task {
             do {
-                // Resample to 16kHz mono — WhisperKit expects this format.
-                // Raw float arrays don't carry sample rate metadata.
+                // Resample to 16kHz mono
                 let targetRate = 16000.0
                 let resampledSamples: [Float]
                 if abs(inputSampleRate - targetRate) < 1.0 {
                     resampledSamples = samples
                 } else {
                     resampledSamples = Self.resample(samples, fromRate: inputSampleRate, toRate: targetRate)
-                    print("WhisperRecognizer: resampled to \(resampledSamples.count) samples at 16kHz")
+                    Self.dbg("Resampled \(samples.count) -> \(resampledSamples.count) samples (16kHz)")
                 }
+
+                Self.dbg("Starting transcription with \(resampledSamples.count) samples...")
 
                 let options = DecodingOptions(
                     verbose: false,
@@ -154,16 +186,26 @@ class WhisperRecognizer {
                     decodeOptions: options
                 )
 
+                Self.dbg("Got \(results.count) results")
+                for (i, r) in results.enumerated() {
+                    Self.dbg("  result[\(i)].text = \"\(r.text)\"")
+                    Self.dbg("  result[\(i)].language = \"\(r.language)\"")
+                    Self.dbg("  result[\(i)].segments = \(r.segments.count)")
+                    for (j, seg) in r.segments.enumerated() {
+                        Self.dbg("    seg[\(j)].text = \"\(seg.text)\" noSpeechProb=\(seg.noSpeechProb)")
+                    }
+                }
+
                 let rawText = results.map { $0.text }.joined(separator: " ")
-                print("WhisperRecognizer: raw = \"\(rawText)\"")
+                Self.dbg("Raw text: \"\(rawText)\"")
 
                 let text = Self.cleanTranscription(rawText)
-                print("WhisperRecognizer: clean = \"\(text)\"")
+                Self.dbg("Clean text: \"\(text)\"")
 
                 let finalText = text.isEmpty ? nil : text
                 DispatchQueue.main.async { completion(finalText) }
             } catch {
-                print("WhisperRecognizer: transcription failed – \(error)")
+                Self.dbg("Transcription FAILED: \(error)")
                 DispatchQueue.main.async { completion(nil) }
             }
         }
@@ -171,7 +213,6 @@ class WhisperRecognizer {
 
     // MARK: - Private Helpers
 
-    /// Resample audio from one sample rate to another using linear interpolation
     private static func resample(_ samples: [Float], fromRate: Double, toRate: Double) -> [Float] {
         let ratio = toRate / fromRate
         let outputLength = Int(Double(samples.count) * ratio)
@@ -190,31 +231,12 @@ class WhisperRecognizer {
         return output
     }
 
-    /// Strip Whisper special tokens and non-speech annotations
     private static func cleanTranscription(_ text: String) -> String {
         var cleaned = text
-
-        // Remove special tokens: <|startoftranscript|>, <|en|>, <|transcribe|>, <|0.00|>, etc.
-        cleaned = cleaned.replacingOccurrences(
-            of: "<\\|[^|]*\\|>",
-            with: "",
-            options: .regularExpression
-        )
-
-        // Remove non-speech annotations: [music], [laughter], [sound of...], (music), etc.
-        cleaned = cleaned.replacingOccurrences(
-            of: "\\[.*?\\]|\\(.*?\\)",
-            with: "",
-            options: .regularExpression
-        )
-
-        // Collapse multiple spaces and trim
-        cleaned = cleaned.replacingOccurrences(
-            of: "\\s+",
-            with: " ",
-            options: .regularExpression
-        ).trimmingCharacters(in: .whitespacesAndNewlines)
-
+        cleaned = cleaned.replacingOccurrences(of: "<\\|[^|]*\\|>", with: "", options: .regularExpression)
+        cleaned = cleaned.replacingOccurrences(of: "\\[.*?\\]|\\(.*?\\)", with: "", options: .regularExpression)
+        cleaned = cleaned.replacingOccurrences(of: "\\s+", with: " ", options: .regularExpression)
+            .trimmingCharacters(in: .whitespacesAndNewlines)
         return cleaned
     }
 
