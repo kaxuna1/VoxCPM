@@ -9,6 +9,12 @@ struct SettingsView: View {
     @State private var isOllamaAvailable = false
     @State private var soundEnabled = SoundManager.isEnabled
     @State private var selectedLanguage: String = UserDefaults.standard.string(forKey: "languageLock") ?? "auto"
+    @State private var agentEnabled = !UserDefaults.standard.bool(forKey: "agentDisabled")
+    @State private var triggerWord = UserDefaults.standard.string(forKey: "agentTriggerWord") ?? "Hey"
+    @State private var minimaxApiKey = UserDefaults.standard.string(forKey: "minimaxApiKey") ?? ""
+    @State private var minimaxModel = UserDefaults.standard.string(forKey: "minimaxModel") ?? "MiniMax-M2.7-highspeed"
+    @State private var connectionStatus = ""
+    @State private var isTestingConnection = false
 
     var body: some View {
         TabView {
@@ -21,9 +27,14 @@ struct SettingsView: View {
                 .tabItem {
                     Label("General", systemImage: "gear")
                 }
+
+            agentSettingsTab
+                .tabItem {
+                    Label("AI Agent", systemImage: "wand.and.stars")
+                }
         }
         .padding(20)
-        .frame(width: 500, height: 420)
+        .frame(width: 500, height: 480)
         .onAppear {
             checkOllama()
         }
@@ -151,6 +162,108 @@ struct SettingsView: View {
             }
         }
         .formStyle(.grouped)
+    }
+
+    // MARK: - AI Agent Tab
+
+    private var agentSettingsTab: some View {
+        Form {
+            Section("Voice Agent") {
+                Toggle("Enable AI Agent", isOn: $agentEnabled)
+                    .onChange(of: agentEnabled) { _, newValue in
+                        UserDefaults.standard.set(!newValue, forKey: "agentDisabled")
+                    }
+
+                if agentEnabled {
+                    HStack {
+                        Text("Trigger Word:")
+                        TextField("Hey", text: $triggerWord)
+                            .textFieldStyle(.roundedBorder)
+                            .frame(maxWidth: 120)
+                            .onChange(of: triggerWord) { _, newValue in
+                                UserDefaults.standard.set(newValue, forKey: "agentTriggerWord")
+                            }
+                    }
+                    Text("Say \"\(triggerWord.isEmpty ? "Hey" : triggerWord), <command>\" to activate the agent.")
+                        .font(.caption)
+                        .foregroundColor(.secondary)
+                }
+            }
+
+            Section("MiniMax API") {
+                SecureField("API Key", text: $minimaxApiKey)
+                    .textFieldStyle(.roundedBorder)
+                    .onChange(of: minimaxApiKey) { _, newValue in
+                        UserDefaults.standard.set(newValue, forKey: "minimaxApiKey")
+                    }
+
+                HStack {
+                    Text("Model:")
+                    TextField("MiniMax-M2.7-highspeed", text: $minimaxModel)
+                        .textFieldStyle(.roundedBorder)
+                        .onChange(of: minimaxModel) { _, newValue in
+                            UserDefaults.standard.set(newValue, forKey: "minimaxModel")
+                        }
+                }
+
+                HStack {
+                    Button("Test Connection") {
+                        testMiniMaxConnection()
+                    }
+                    .disabled(minimaxApiKey.isEmpty || isTestingConnection)
+
+                    if isTestingConnection {
+                        ProgressView()
+                            .controlSize(.small)
+                    }
+
+                    if !connectionStatus.isEmpty {
+                        Text(connectionStatus)
+                            .font(.caption)
+                            .foregroundColor(connectionStatus.contains("Connected") ? .green : .red)
+                    }
+                }
+            }
+
+            Section("Available Tools") {
+                VStack(alignment: .leading, spacing: 4) {
+                    toolRow("open_application", "Open any macOS app")
+                    toolRow("open_url", "Open URL in browser")
+                    toolRow("search_google", "Google search")
+                    toolRow("run_shell_command", "Run terminal command")
+                    toolRow("toggle_music", "Play/pause Apple Music")
+                    toolRow("set_volume", "Set system volume")
+                    toolRow("toggle_dark_mode", "Toggle dark/light mode")
+                    toolRow("create_file", "Create a file")
+                    toolRow("read_clipboard", "Read & type clipboard")
+                    toolRow("type_text", "Type text (fallback)")
+                }
+                .font(.caption)
+            }
+        }
+        .formStyle(.grouped)
+    }
+
+    private func toolRow(_ name: String, _ desc: String) -> some View {
+        HStack(spacing: 6) {
+            Text(name)
+                .font(.system(.caption, design: .monospaced))
+                .foregroundColor(.accentColor)
+            Text("— \(desc)")
+                .foregroundColor(.secondary)
+        }
+    }
+
+    private func testMiniMaxConnection() {
+        isTestingConnection = true
+        connectionStatus = ""
+        Task {
+            let result = await MiniMaxClient.shared.testConnection()
+            await MainActor.run {
+                connectionStatus = result.message
+                isTestingConnection = false
+            }
+        }
     }
 
     // MARK: - Helpers
