@@ -2,6 +2,62 @@ import SwiftUI
 
 struct HistoryView: View {
     @ObservedObject var store: TranscriptionStore
+    @State private var selectedTab = 0
+
+    var body: some View {
+        VStack(spacing: 0) {
+            // Tab bar
+            HStack(spacing: 0) {
+                TabButton(title: "History", icon: "clock", isSelected: selectedTab == 0) {
+                    selectedTab = 0
+                }
+                TabButton(title: "Statistics", icon: "chart.bar", isSelected: selectedTab == 1) {
+                    selectedTab = 1
+                }
+            }
+            .padding(.horizontal, 8)
+            .padding(.top, 8)
+            .background(.bar)
+
+            Divider()
+
+            // Content
+            if selectedTab == 0 {
+                HistoryListView(store: store)
+            } else {
+                StatisticsView(store: store)
+            }
+        }
+        .frame(minWidth: 500, minHeight: 350)
+    }
+}
+
+struct TabButton: View {
+    let title: String
+    let icon: String
+    let isSelected: Bool
+    let action: () -> Void
+
+    var body: some View {
+        Button(action: action) {
+            HStack(spacing: 4) {
+                Image(systemName: icon)
+                    .font(.caption)
+                Text(title)
+                    .font(.subheadline)
+            }
+            .padding(.horizontal, 12)
+            .padding(.vertical, 6)
+            .background(isSelected ? Color.accentColor.opacity(0.15) : .clear)
+            .foregroundColor(isSelected ? .accentColor : .secondary)
+            .cornerRadius(6)
+        }
+        .buttonStyle(.plain)
+    }
+}
+
+struct HistoryListView: View {
+    @ObservedObject var store: TranscriptionStore
     @State private var searchText = ""
     @State private var selectedID: UUID?
 
@@ -21,7 +77,6 @@ struct HistoryView: View {
             detailPanel
                 .frame(minWidth: 280)
         }
-        .frame(minWidth: 500, minHeight: 350)
     }
 
     private var masterPanel: some View {

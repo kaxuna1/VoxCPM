@@ -91,6 +91,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         if event.type == .rightMouseUp {
             let menu = NSMenu()
             menu.addItem(NSMenuItem(title: "History", action: #selector(openHistory), keyEquivalent: "h"))
+            menu.addItem(NSMenuItem(title: "Statistics", action: #selector(openStatistics), keyEquivalent: ""))
             menu.addItem(NSMenuItem.separator())
             let launchItem = NSMenuItem(title: "Launch at Login", action: #selector(toggleLaunchAtLogin), keyEquivalent: "")
             launchItem.state = SMAppService.mainApp.status == .enabled ? .on : .off
@@ -126,6 +127,11 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 
     @objc private func openHistory() {
         historyWindowController?.showWindow()
+    }
+
+    @objc private func openStatistics() {
+        historyWindowController?.showWindow()
+        // The history window has a Statistics tab - user can switch to it
     }
 
     @objc private func openSettings() {
