@@ -137,12 +137,13 @@ class WhisperRecognizer {
                     decodeOptions: options
                 )
 
-                let text = results
-                    .flatMap { $0.segments }
+                // Extract clean text: use top-level .text (already cleaned by WhisperKit),
+                // then strip any remaining special tokens as a safety net
+                let rawText = results
                     .map { $0.text }
                     .joined(separator: " ")
-                    .trimmingCharacters(in: .whitespacesAndNewlines)
 
+                let text = Self.cleanTranscription(rawText)
                 let finalText = text.isEmpty ? nil : text
                 DispatchQueue.main.async { completion(finalText) }
             } catch {
@@ -153,6 +154,35 @@ class WhisperRecognizer {
     }
 
     // MARK: - Private Helpers
+
+    /// Strip Whisper special tokens and non-speech annotations from transcription output
+    private static func cleanTranscription(_ text: String) -> String {
+        var cleaned = text
+
+        // Remove special tokens: <|startoftranscript|>, <|en|>, <|transcribe|>, <|endoftext|>, <|0.00|>, etc.
+        cleaned = cleaned.replacingOccurrences(
+            of: "<\\|[^|]*\\|>",
+            with: "",
+            options: .regularExpression
+        )
+
+        // Remove non-speech annotations: [music], [laughter], [sound of...], (music), etc.
+        cleaned = cleaned.replacingOccurrences(
+            of: "\\[.*?\\]|\\(.*?\\)",
+            with: "",
+            options: .regularExpression
+        )
+
+        // Collapse multiple spaces and trim
+        cleaned = cleaned.replacingOccurrences(
+            of: "\\s+",
+            with: " ",
+            options: .regularExpression
+        )
+        .trimmingCharacters(in: .whitespacesAndNewlines)
+
+        return cleaned
+    }
 
     private func appendAudio(buffer: AVAudioPCMBuffer) {
         guard let channelData = buffer.floatChannelData?[0] else { return }
