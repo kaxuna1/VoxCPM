@@ -3,7 +3,6 @@ import AppKit
 import UserNotifications
 import ApplicationServices
 import AVFoundation
-import Speech
 
 @MainActor
 class AppDelegate: NSObject, NSApplicationDelegate {
@@ -12,12 +11,11 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     private var globalMonitor: Any?
     private var localMonitor: Any?
     private var wasRightOptionPressed = false
-    private let speechRecognizer = SpeechRecognizer()
+    private let whisperRecognizer = WhisperRecognizer()
     private let viewModel = ViewModel()
     private var overlayController: OverlayWindowController?
 
     private enum DefaultsKey {
-        static let hasRequestedSpeech = "PushToTalkSTT.hasRequestedSpeech"
         static let hasRequestedMic = "PushToTalkSTT.hasRequestedMic"
         static let hasRequestedNotifications = "PushToTalkSTT.hasRequestedNotifications"
         static let hasPromptedAccessibility = "PushToTalkSTT.hasPromptedAccessibility"
@@ -35,15 +33,24 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         }
 
         popover = NSPopover()
-        popover.contentSize = NSSize(width: 280, height: 220)
+        popover.contentSize = NSSize(width: 280, height: 260)
         popover.behavior = .transient
         popover.contentViewController = NSHostingController(rootView: ContentView(viewModel: viewModel))
 
         overlayController = OverlayWindowController()
 
-        speechRecognizer.onAudioLevel = { [weak self] level in
+        whisperRecognizer.onAudioLevel = { [weak self] level in
             self?.overlayController?.updateAudioLevel(CGFloat(level))
         }
+
+        whisperRecognizer.onModelStateChanged = { [weak self] state in
+            guard let self = self else { return }
+            self.viewModel.modelStatus = state.rawValue
+            self.viewModel.isModelReady = (state == .loaded)
+            self.updateIcon()
+        }
+
+        Task { await whisperRecognizer.loadModel() }
 
         setupRightOptionMonitor()
         requestPermissionsIfNeeded()
@@ -109,24 +116,19 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     private func startRecording() {
-        let speechStatus = SpeechRecognizer.authorizationStatus()
-        let micStatus = AVCaptureDevice.authorizationStatus(for: .audio)
-
-        if speechStatus == .notDetermined {
-            SFSpeechRecognizer.requestAuthorization { _ in }
-            showNotification(title: "Permission Requested", body: "Please grant Speech Recognition permission, then press Right Option again.")
+        guard viewModel.isModelReady else {
+            showNotification(title: "Model Loading", body: "WhisperKit model is still loading. Please wait.")
             return
         }
+
+        let micStatus = AVCaptureDevice.authorizationStatus(for: .audio)
+
         if micStatus == .notDetermined {
             AVCaptureDevice.requestAccess(for: .audio) { _ in }
             showNotification(title: "Permission Requested", body: "Please grant Microphone access, then press Right Option again.")
             return
         }
 
-        guard speechStatus == .authorized else {
-            showNotification(title: "Permission Denied", body: "Speech Recognition is disabled in System Settings.")
-            return
-        }
         guard micStatus == .authorized else {
             showNotification(title: "Permission Denied", body: "Microphone access is disabled in System Settings.")
             return
@@ -136,7 +138,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         updateIcon()
         overlayController?.show()
 
-        speechRecognizer.startRecording { [weak self] error in
+        whisperRecognizer.startRecording { [weak self] error in
             if let error = error {
                 DispatchQueue.main.async {
                     self?.viewModel.isRecording = false
@@ -154,12 +156,12 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         updateIcon()
         overlayController?.hide()
 
-        speechRecognizer.stopRecording { [weak self] text in
+        whisperRecognizer.stopRecording { [weak self] text in
             guard let self = self else { return }
             if let text = text, !text.isEmpty {
                 self.viewModel.lastTranscription = text
-                ClipboardManager.copy(text)
-                DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) {
+                // TextInjector handles clipboard save/set/paste/restore internally
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.15) {
                     TextInjector.inject(text)
                 }
                 self.showNotification(title: "Typed & Copied", body: text)
@@ -171,9 +173,22 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 
     private func updateIcon() {
         guard let button = statusItem.button else { return }
-        let symbolName = viewModel.isRecording ? "mic.fill" : "mic"
+        let symbolName: String
+        let tintColor: NSColor
+
+        if viewModel.isRecording {
+            symbolName = "mic.fill"
+            tintColor = .systemRed
+        } else if !viewModel.isModelReady {
+            symbolName = "mic.badge.xmark"
+            tintColor = .systemOrange
+        } else {
+            symbolName = "mic"
+            tintColor = .labelColor
+        }
+
         button.image = NSImage(systemSymbolName: symbolName, accessibilityDescription: "Push to Talk")
-        button.contentTintColor = viewModel.isRecording ? .systemRed : .labelColor
+        button.contentTintColor = tintColor
         button.needsDisplay = true
     }
 
@@ -190,12 +205,6 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     // MARK: - Permissions
 
     private func requestPermissionsIfNeeded() {
-        let speechStatus = SpeechRecognizer.authorizationStatus()
-        if speechStatus == .notDetermined && !UserDefaults.standard.bool(forKey: DefaultsKey.hasRequestedSpeech) {
-            UserDefaults.standard.set(true, forKey: DefaultsKey.hasRequestedSpeech)
-            SFSpeechRecognizer.requestAuthorization { _ in }
-        }
-
         let micStatus = AVCaptureDevice.authorizationStatus(for: .audio)
         if micStatus == .notDetermined && !UserDefaults.standard.bool(forKey: DefaultsKey.hasRequestedMic) {
             UserDefaults.standard.set(true, forKey: DefaultsKey.hasRequestedMic)
@@ -204,16 +213,10 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     private func checkAccessibility() {
-        let accessibilityEnabled = AXIsProcessTrustedWithOptions(nil)
-        if !accessibilityEnabled {
-            let hasPrompted = UserDefaults.standard.bool(forKey: DefaultsKey.hasPromptedAccessibility)
-            if !hasPrompted {
-                UserDefaults.standard.set(true, forKey: DefaultsKey.hasPromptedAccessibility)
-                showNotification(
-                    title: "Accessibility Required",
-                    body: "Grant Accessibility access in System Settings for global Right Option hotkey and text typing."
-                )
-            }
+        if !AXIsProcessTrusted() {
+            // Show system dialog once, directing to System Settings → Accessibility
+            let opts = [kAXTrustedCheckOptionPrompt.takeUnretainedValue() as String: true] as CFDictionary
+            AXIsProcessTrustedWithOptions(opts)
         }
     }
 

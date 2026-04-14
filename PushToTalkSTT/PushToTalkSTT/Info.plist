@@ -18,8 +18,6 @@
 	<string>1.0</string>
 	<key>CFBundleVersion</key>
 	<string>1</string>
-	<key>NSSpeechRecognitionUsageDescription</key>
-	<string>PushToTalkSTT uses speech recognition to convert your voice to text.</string>
 	<key>NSMicrophoneUsageDescription</key>
 	<string>PushToTalkSTT needs microphone access to capture your voice for speech recognition.</string>
 </dict>
