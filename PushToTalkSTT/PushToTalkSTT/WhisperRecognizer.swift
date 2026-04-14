@@ -2,6 +2,12 @@ import AVFoundation
 import Accelerate
 import WhisperKit
 
+struct RecognitionResult {
+    let text: String
+    let language: String
+    let duration: Double
+}
+
 enum WhisperModelState: String {
     case unloaded = "Not loaded"
     case loading = "Loading model..."
@@ -129,7 +135,7 @@ class WhisperRecognizer {
         }
     }
 
-    func stopRecording(completion: @escaping (String?) -> Void) {
+    func stopRecording(completion: @escaping (RecognitionResult?) -> Void) {
         Self.dbg("stopRecording() called, isRunning=\(audioEngine.isRunning)")
 
         guard audioEngine.isRunning else {
@@ -202,8 +208,13 @@ class WhisperRecognizer {
                 let text = Self.cleanTranscription(rawText)
                 Self.dbg("Clean text: \"\(text)\"")
 
-                let finalText = text.isEmpty ? nil : text
-                DispatchQueue.main.async { completion(finalText) }
+                if text.isEmpty {
+                    DispatchQueue.main.async { completion(nil) }
+                } else {
+                    let language = results.first?.language ?? "unknown"
+                    let result = RecognitionResult(text: text, language: language, duration: duration)
+                    DispatchQueue.main.async { completion(result) }
+                }
             } catch {
                 Self.dbg("Transcription FAILED: \(error)")
                 DispatchQueue.main.async { completion(nil) }
