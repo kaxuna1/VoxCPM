@@ -64,7 +64,7 @@ class WhisperRecognizer {
         modelState = .loading
         Self.dbg("loadModel() called")
 
-        let modelName = "openai_whisper-large-v3"
+        let modelName = "openai_whisper-large-v3_turbo"
         let modelPath = (Bundle.main.resourcePath ?? Bundle.main.bundlePath) + "/" + modelName
         Self.dbg("modelPath = \(modelPath)")
         Self.dbg("exists = \(FileManager.default.fileExists(atPath: modelPath))")
