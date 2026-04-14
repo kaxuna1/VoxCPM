@@ -259,6 +259,28 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             guard let self = self else { return }
 
             if let result = result {
+                // AI Agent: check for trigger word
+                if AgentManager.hasTrigger(result.text) {
+                    let entry = TranscriptionEntry(text: result.text, language: result.language, duration: result.duration)
+                    self.transcriptionStore.add(entry)
+                    self.overlayController?.showProcessing()
+
+                    Task {
+                        let toolResult = await AgentManager.process(result.text)
+                        await MainActor.run {
+                            self.overlayController?.hide()
+                            self.viewModel.lastTranscription = result.text
+                            if toolResult.success {
+                                self.showNotification(title: "Agent", body: toolResult.message)
+                            } else {
+                                TextInjector.inject(result.text)
+                                self.showNotification(title: "Agent Error", body: toolResult.message)
+                            }
+                        }
+                    }
+                    return
+                }
+
                 // Command mode: execute voice command instead of injecting text
                 if DictationMode.current == .command {
                     self.overlayController?.hide()
