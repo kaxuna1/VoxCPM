@@ -94,6 +94,17 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             let soundItem = NSMenuItem(title: "Sound Feedback", action: #selector(toggleSoundFeedback), keyEquivalent: "")
             soundItem.state = SoundManager.isEnabled ? .on : .off
             menu.addItem(soundItem)
+            let modeMenu = NSMenu()
+            for mode in DictationMode.allCases {
+                let item = NSMenuItem(title: mode.rawValue, action: #selector(switchDictationMode(_:)), keyEquivalent: "")
+                item.representedObject = mode.rawValue
+                item.state = DictationMode.current == mode ? .on : .off
+                item.image = NSImage(systemSymbolName: mode.icon, accessibilityDescription: nil)
+                modeMenu.addItem(item)
+            }
+            let modeItem = NSMenuItem(title: "Mode: \(DictationMode.current.rawValue)", action: nil, keyEquivalent: "")
+            modeItem.submenu = modeMenu
+            menu.addItem(modeItem)
             menu.addItem(NSMenuItem(title: "Settings...", action: #selector(openSettings), keyEquivalent: ","))
             menu.addItem(NSMenuItem.separator())
             menu.addItem(NSMenuItem(title: "Quit", action: #selector(quitApp), keyEquivalent: "q"))
@@ -131,6 +142,12 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 
     @objc private func toggleSoundFeedback() {
         SoundManager.isEnabled.toggle()
+    }
+
+    @objc private func switchDictationMode(_ sender: NSMenuItem) {
+        guard let rawValue = sender.representedObject as? String,
+              let mode = DictationMode(rawValue: rawValue) else { return }
+        DictationMode.current = mode
     }
 
     // MARK: - Right Option Global + Local Monitor
@@ -213,6 +230,19 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             guard let self = self else { return }
 
             if let result = result {
+                // Command mode: execute voice command instead of injecting text
+                if DictationMode.current == .command {
+                    self.overlayController?.hide()
+                    let entry = TranscriptionEntry(text: result.text, language: result.language, duration: result.duration)
+                    self.transcriptionStore.add(entry)
+                    if CommandExecutor.execute(result.text) {
+                        self.showNotification(title: "Command", body: result.text)
+                    } else {
+                        self.showNotification(title: "Unknown Command", body: result.text)
+                    }
+                    return
+                }
+
                 let entry = TranscriptionEntry(
                     text: result.text,
                     language: result.language,
@@ -220,10 +250,15 @@ class AppDelegate: NSObject, NSApplicationDelegate {
                 )
                 self.transcriptionStore.add(entry)
 
-                // Run AI post-processing if enabled
-                if PostProcessor.shared.mode != .off {
+                // In Code mode, always run code post-processing
+                let shouldProcess = DictationMode.current == .code || PostProcessor.shared.mode != .off
+                if shouldProcess {
                     Task {
+                        let useMode: ProcessingMode = DictationMode.current == .code ? .code : PostProcessor.shared.mode
+                        let saved = PostProcessor.shared.mode
+                        PostProcessor.shared.mode = useMode
                         let processed = await PostProcessor.shared.process(result.text)
+                        PostProcessor.shared.mode = saved
                         await MainActor.run {
                             self.viewModel.lastTranscription = processed
                             DispatchQueue.main.asyncAfter(deadline: .now() + 0.15) {
